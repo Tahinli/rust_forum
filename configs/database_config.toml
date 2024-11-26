@@ -1,0 +1,6 @@
+[database_config]
+address = "localhost:8000"
+username = "root"
+password = "root"
+namespace = "rust_forum"
+database = "rust_forum"
