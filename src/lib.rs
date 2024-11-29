@@ -2,6 +2,7 @@ use std::{fs::File, io::Read};
 
 pub mod database;
 
+#[derive(Debug)]
 pub struct DatabaseConfig {
     pub address: String,
     pub username: String,
@@ -20,36 +21,42 @@ impl Default for DatabaseConfig {
             .lines()
             .map(|line| line.trim_end())
             .collect::<Vec<&str>>();
+
         if database_configs[0] == "[database_config]" {
             Self {
                 address: database_configs[1]
                     .split_once('=')
                     .unwrap()
                     .1
+                    .replace('"', "")
                     .trim()
                     .to_string(),
                 username: database_configs[2]
                     .split_once('=')
                     .unwrap()
                     .1
+                    .replace('"', "")
                     .trim()
                     .to_string(),
                 password: database_configs[3]
                     .split_once('=')
                     .unwrap()
                     .1
+                    .replace('"', "")
                     .trim()
                     .to_string(),
                 namespace: database_configs[4]
                     .split_once('=')
                     .unwrap()
                     .1
+                    .replace('"', "")
                     .trim()
                     .to_string(),
                 database: database_configs[5]
                     .split_once('=')
                     .unwrap()
                     .1
+                    .replace('"', "")
                     .trim()
                     .to_string(),
             }
@@ -59,6 +66,7 @@ impl Default for DatabaseConfig {
     }
 }
 
+#[derive(Debug)]
 pub struct ServerConfig {
     pub address: String,
 }
@@ -80,6 +88,7 @@ impl Default for ServerConfig {
                     .split_once('=')
                     .unwrap()
                     .1
+                    .replace('"', "")
                     .trim()
                     .to_string(),
             }
