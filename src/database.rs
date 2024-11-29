@@ -13,6 +13,7 @@ static DB: LazyLock<Surreal<Client>> = LazyLock::new(Surreal::init);
 
 pub async fn establish_connection() {
     let database_config = DatabaseConfig::default();
+
     DB.connect::<Ws>(database_config.address).await.unwrap();
     DB.signin(Root {
         username: &database_config.username,
