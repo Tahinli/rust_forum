@@ -1,3 +1,7 @@
+pub mod interaction;
+pub mod post;
+pub mod user;
+
 use std::{sync::LazyLock, time::Duration};
 
 use surrealdb::{
@@ -36,11 +40,3 @@ pub async fn is_alive() -> bool {
         _ = sleep(Duration::from_secs(1)) => false
     }
 }
-
-pub async fn create_post() {}
-
-pub async fn read_post() {}
-
-pub async fn update_post() {}
-
-pub async fn delete_post() {}
