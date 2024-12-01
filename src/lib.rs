@@ -1,3 +1,4 @@
+pub mod feature;
 pub mod database;
 pub mod utils;
 
