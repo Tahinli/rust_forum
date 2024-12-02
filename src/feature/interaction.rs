@@ -1,3 +1,6 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
 enum InteractionType {
     Like,
     Dislike,
@@ -8,9 +11,12 @@ enum InteractionType {
     Rocket,
     Smile,
     Laugh,
+    Sad,
+    Shrug,
 }
+#[derive(Debug, Serialize, Deserialize)]
 struct Interaction {
-    post_id:String,
-    user_id:String,
+    post_id: String,
+    user_id: String,
     interaction_type: InteractionType,
 }

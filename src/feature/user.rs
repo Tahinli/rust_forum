@@ -24,7 +24,13 @@ pub struct User {
 }
 
 impl User {
-    pub async fn new(name: Vec<String>, surname: Vec<String>, gender: bool, birth_date: NaiveDate, email: String) -> Self {
+    pub async fn new(
+        name: Vec<String>,
+        surname: Vec<String>,
+        gender: bool,
+        birth_date: NaiveDate,
+        email: String,
+    ) -> Self {
         Self {
             name,
             surname,

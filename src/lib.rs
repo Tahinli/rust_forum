@@ -1,7 +1,8 @@
-pub mod feature;
 pub mod database;
+pub mod feature;
 pub mod utils;
 
+use sea_orm::DatabaseConnection;
 use utils::naive_toml_parser;
 
 const DATABASE_CONFIG_FILE_LOCATION: &str = "./configs/database_config.toml";
@@ -12,8 +13,8 @@ pub struct DatabaseConfig {
     pub address: String,
     pub username: String,
     pub password: String,
-    pub namespace: String,
     pub database: String,
+    pub backend: String,
 }
 impl Default for DatabaseConfig {
     fn default() -> Self {
@@ -21,8 +22,8 @@ impl Default for DatabaseConfig {
 
         if header == "[database_config]" {
             Self {
+                backend: database_configs.pop().unwrap(),
                 database: database_configs.pop().unwrap(),
-                namespace: database_configs.pop().unwrap(),
                 password: database_configs.pop().unwrap(),
                 username: database_configs.pop().unwrap(),
                 address: database_configs.pop().unwrap(),
@@ -50,4 +51,9 @@ impl Default for ServerConfig {
             panic!("Server Config File Must Include [server_config] at the First Line")
         }
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct AppState {
+    pub database_connection: DatabaseConnection,
 }
