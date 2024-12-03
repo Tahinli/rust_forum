@@ -8,36 +8,20 @@ pub struct Contact {
     pub website: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "role")]
 pub enum Role {
-    User,
+    Zero,
+    Hero,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
-    pub name: Vec<String>,
-    pub surname: Vec<String>,
+    pub id: i64,
+    pub name: String,
+    pub surname: String,
     pub gender: bool,
     pub birth_date: NaiveDate,
     pub email: String,
     pub role: Role,
-}
-
-impl User {
-    pub async fn new(
-        name: Vec<String>,
-        surname: Vec<String>,
-        gender: bool,
-        birth_date: NaiveDate,
-        email: String,
-    ) -> Self {
-        Self {
-            name,
-            surname,
-            gender,
-            birth_date,
-            email,
-            role: Role::User,
-        }
-    }
 }

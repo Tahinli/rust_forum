@@ -2,7 +2,7 @@ pub mod database;
 pub mod feature;
 pub mod utils;
 
-use sea_orm::DatabaseConnection;
+use sqlx::{Pool, Postgres};
 use utils::naive_toml_parser;
 
 const DATABASE_CONFIG_FILE_LOCATION: &str = "./configs/database_config.toml";
@@ -15,6 +15,7 @@ pub struct DatabaseConfig {
     pub password: String,
     pub database: String,
     pub backend: String,
+    pub connection_pool_size: u32,
 }
 impl Default for DatabaseConfig {
     fn default() -> Self {
@@ -22,6 +23,7 @@ impl Default for DatabaseConfig {
 
         if header == "[database_config]" {
             Self {
+                connection_pool_size: database_configs.pop().unwrap().parse().unwrap(),
                 backend: database_configs.pop().unwrap(),
                 database: database_configs.pop().unwrap(),
                 password: database_configs.pop().unwrap(),
@@ -55,5 +57,5 @@ impl Default for ServerConfig {
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    pub database_connection: DatabaseConnection,
+    pub database_connection: Pool<Postgres>,
 }
