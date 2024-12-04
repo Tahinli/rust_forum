@@ -4,7 +4,6 @@ use sqlx::{Pool, Postgres};
 use crate::feature::post::Post;
 
 pub async fn create(
-    creation_time: &DateTime<Utc>,
     poster_id: i64,
     post: &String,
     database_connection: &Pool<Postgres>,
@@ -12,11 +11,10 @@ pub async fn create(
     sqlx::query_as!(
         Post,
         r#"
-            INSERT INTO "post"(creation_time, poster_id, post) 
-            VALUES ($1, $2, $3) 
+            INSERT INTO "post"(poster_id, post) 
+            VALUES ($1, $2) 
             RETURNING *
         "#,
-        creation_time,
         poster_id,
         post
     )

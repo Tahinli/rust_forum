@@ -5,7 +5,6 @@ use crate::feature::comment::Comment;
 
 pub async fn create(
     post_creation_time: DateTime<Utc>,
-    creation_time: DateTime<Utc>,
     commenter_id: i64,
     comment: &String,
     database_connection: &Pool<Postgres>,
@@ -13,12 +12,11 @@ pub async fn create(
     sqlx::query_as!(
         Comment,
         r#"
-            INSERT INTO "comment"(post_creation_time, creation_time, commenter_id, comment) 
-            VALUES ($1, $2, $3, $4) 
+            INSERT INTO "comment"(post_creation_time, commenter_id, comment) 
+            VALUES ($1, $2, $3) 
             RETURNING *
         "#,
         post_creation_time,
-        creation_time,
         commenter_id,
         comment,
     )

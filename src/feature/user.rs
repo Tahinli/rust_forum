@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,4 +17,5 @@ pub struct User {
     pub birth_date: NaiveDate,
     pub email: String,
     pub role_id: i64,
+    pub creation_time: DateTime<Utc>,
 }

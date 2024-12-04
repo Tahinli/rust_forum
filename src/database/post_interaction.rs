@@ -7,17 +7,18 @@ pub async fn create(
     post_creation_time: &DateTime<Utc>,
     interaction_id: i64,
     interactor_id: i64,
-    interaction_time: &DateTime<Utc>,
     database_connection: &Pool<Postgres>,
 ) -> Result<PostInteraction, sqlx::Error> {
     sqlx::query_as!(
         PostInteraction,
         r#"
-            INSERT INTO "post_interaction"(post_creation_time, interaction_id, interactor_id, interaction_time) 
-            VALUES ($1, $2, $3, $4) 
+            INSERT INTO "post_interaction"(post_creation_time, interaction_id, interactor_id) 
+            VALUES ($1, $2, $3) 
             RETURNING *
         "#,
-        post_creation_time, interaction_id, interactor_id, interaction_time,
+        post_creation_time,
+        interaction_id,
+        interactor_id,
     )
     .fetch_one(database_connection)
     .await
