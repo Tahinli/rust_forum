@@ -1,4 +1,5 @@
+pub mod comment;
 pub mod interaction;
-pub mod message;
 pub mod post;
+pub mod role;
 pub mod user;

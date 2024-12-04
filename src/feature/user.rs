@@ -8,13 +8,6 @@ pub struct Contact {
     pub website: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "role")]
-pub enum Role {
-    Zero,
-    Hero,
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
     pub id: i64,
@@ -23,5 +16,5 @@ pub struct User {
     pub gender: bool,
     pub birth_date: NaiveDate,
     pub email: String,
-    pub role: Role,
+    pub role_id: i64,
 }
