@@ -66,7 +66,7 @@ pub async fn delete(
     sqlx::query_as!(
         Post,
         r#"
-        DELETE FROM "post" where creation_time = $1
+        DELETE FROM "post" where "creation_time" = $1
         RETURNING *
     "#,
         creation_time

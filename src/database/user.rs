@@ -65,7 +65,7 @@ pub async fn delete(id: i64, database_connection: &Pool<Postgres>) -> Result<Use
     sqlx::query_as!(
         User,
         r#"
-        DELETE FROM "user" where id = $1
+        DELETE FROM "user" where "id" = $1
         RETURNING *
     "#,
         id
