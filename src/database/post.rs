@@ -74,6 +74,19 @@ pub async fn delete(
 }
 
 pub async fn read_all(
+    database_connection: &Pool<Postgres>,
+) -> Result<Vec<Post>, sqlx::Error> {
+    sqlx::query_as!(
+        Post,
+        r#"
+            SELECT * FROM "post"
+        "#,
+    )
+    .fetch_all(database_connection)
+    .await
+}
+
+pub async fn read_all_for_user(
     poster_id: i64,
     database_connection: &Pool<Postgres>,
 ) -> Result<Vec<Post>, sqlx::Error> {
