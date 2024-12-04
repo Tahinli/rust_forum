@@ -72,3 +72,18 @@ pub async fn delete(
     .fetch_one(database_connection)
     .await
 }
+
+pub async fn read_all(
+    post_creation_time: DateTime<Utc>,
+    database_connection: &Pool<Postgres>,
+) -> Result<Vec<Comment>, sqlx::Error> {
+    sqlx::query_as!(
+        Comment,
+        r#"
+            SELECT * FROM "comment" WHERE "post_creation_time" = $1
+        "#,
+        post_creation_time
+    )
+    .fetch_all(database_connection)
+    .await
+}
