@@ -73,7 +73,7 @@ pub async fn delete(
     .await
 }
 
-pub async fn read_all(
+pub async fn read_all_for_comment(
     comment_creation_time: &DateTime<Utc>,
     database_connection: &Pool<Postgres>,
 ) -> Result<Vec<CommentInteraction>, sqlx::Error> {

@@ -73,3 +73,29 @@ pub async fn delete(id: i64, database_connection: &Pool<Postgres>) -> Result<Use
     .fetch_one(database_connection)
     .await
 }
+
+pub async fn read_all(database_connection: &Pool<Postgres>) -> Result<Vec<User>, sqlx::Error> {
+    sqlx::query_as!(
+        User,
+        r#"
+            SELECT * FROM "user"
+        "#,
+    )
+    .fetch_all(database_connection)
+    .await
+}
+
+pub async fn read_all_for_role(
+    role_id: i64,
+    database_connection: &Pool<Postgres>,
+) -> Result<Vec<User>, sqlx::Error> {
+    sqlx::query_as!(
+        User,
+        r#"
+            SELECT * FROM "user" WHERE "role_id" = $1
+        "#,
+        role_id
+    )
+    .fetch_all(database_connection)
+    .await
+}
