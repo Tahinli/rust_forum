@@ -6,7 +6,7 @@ use crate::feature::user::User;
 pub async fn create(
     name: &String,
     surname: &String,
-    gender: bool,
+    gender: &bool,
     birth_date: &NaiveDate,
     email: &String,
     database_connection: &Pool<Postgres>,
@@ -29,29 +29,26 @@ pub async fn create(
     .await
 }
 
-pub async fn read(
-    email: &String,
-    database_connection: &Pool<Postgres>,
-) -> Result<User, sqlx::Error> {
+pub async fn read(id: &i64, database_connection: &Pool<Postgres>) -> Result<User, sqlx::Error> {
     sqlx::query_as!(
         User,
         r#"
-            SELECT * FROM "user" WHERE "email" = $1
+            SELECT * FROM "user" WHERE "id" = $1
         "#,
-        email
+        id
     )
     .fetch_one(database_connection)
     .await
 }
 
 pub async fn update(
-    id: i64,
+    id: &i64,
     name: &String,
     surname: &String,
     gender: &bool,
     birth_date: &NaiveDate,
     email: &String,
-    role_id: i64,
+    role_id: &i64,
     database_connection: &Pool<Postgres>,
 ) -> Result<User, sqlx::Error> {
     sqlx::query_as!(User,
@@ -61,7 +58,7 @@ pub async fn update(
     "#, name, surname, gender, birth_date, email, role_id, id).fetch_one(database_connection).await
 }
 
-pub async fn delete(id: i64, database_connection: &Pool<Postgres>) -> Result<User, sqlx::Error> {
+pub async fn delete(id: &i64, database_connection: &Pool<Postgres>) -> Result<User, sqlx::Error> {
     sqlx::query_as!(
         User,
         r#"
@@ -85,8 +82,68 @@ pub async fn read_all(database_connection: &Pool<Postgres>) -> Result<Vec<User>,
     .await
 }
 
+pub async fn read_with_email(
+    email: &String,
+    database_connection: &Pool<Postgres>,
+) -> Result<User, sqlx::Error> {
+    sqlx::query_as!(
+        User,
+        r#"
+            SELECT * FROM "user" WHERE "email" = $1
+        "#,
+        email
+    )
+    .fetch_one(database_connection)
+    .await
+}
+
+pub async fn read_all_for_name(
+    name: &String,
+    database_connection: &Pool<Postgres>,
+) -> Result<Vec<User>, sqlx::Error> {
+    sqlx::query_as!(
+        User,
+        r#"
+            SELECT * FROM "user" WHERE "name" = $1
+        "#,
+        name
+    )
+    .fetch_all(database_connection)
+    .await
+}
+
+pub async fn read_all_for_surname(
+    surname: &String,
+    database_connection: &Pool<Postgres>,
+) -> Result<Vec<User>, sqlx::Error> {
+    sqlx::query_as!(
+        User,
+        r#"
+            SELECT * FROM "user" WHERE "surname" = $1
+        "#,
+        surname
+    )
+    .fetch_all(database_connection)
+    .await
+}
+
+pub async fn read_all_for_birth_date(
+    birth_date: &NaiveDate,
+    database_connection: &Pool<Postgres>,
+) -> Result<Vec<User>, sqlx::Error> {
+    sqlx::query_as!(
+        User,
+        r#"
+            SELECT * FROM "user" WHERE "birth_date" = $1
+        "#,
+        birth_date
+    )
+    .fetch_all(database_connection)
+    .await
+}
+
 pub async fn read_all_for_role(
-    role_id: i64,
+    role_id: &i64,
     database_connection: &Pool<Postgres>,
 ) -> Result<Vec<User>, sqlx::Error> {
     sqlx::query_as!(
@@ -98,4 +155,201 @@ pub async fn read_all_for_role(
     )
     .fetch_all(database_connection)
     .await
+}
+
+pub async fn read_all_for_gender(
+    gender: &bool,
+    database_connection: &Pool<Postgres>,
+) -> Result<Vec<User>, sqlx::Error> {
+    sqlx::query_as!(
+        User,
+        r#"
+            SELECT * FROM "user" WHERE "gender" = $1
+        "#,
+        gender
+    )
+    .fetch_all(database_connection)
+    .await
+}
+
+pub async fn read_id_with_email(
+    email: &String,
+    database_connection: &Pool<Postgres>,
+) -> Result<i64, sqlx::Error> {
+    Ok(sqlx::query!(
+        r#"
+            SELECT "id" FROM "user" WHERE "email" = $1
+        "#,
+        email
+    )
+    .fetch_one(database_connection)
+    .await?
+    .id)
+}
+
+pub async fn read_all_id(database_connection: &Pool<Postgres>) -> Result<Vec<i64>, sqlx::Error> {
+    Ok(sqlx::query!(
+        r#"
+            SELECT "id" FROM "user"
+        "#,
+    )
+    .fetch_all(database_connection)
+    .await?
+    .iter()
+    .map(|record| record.id)
+    .collect::<Vec<i64>>())
+}
+
+pub async fn read_all_id_for_role(
+    role_id: &i64,
+    database_connection: &Pool<Postgres>,
+) -> Result<Vec<i64>, sqlx::Error> {
+    Ok(sqlx::query!(
+        r#"
+            SELECT "id" FROM "user" WHERE "role_id" = $1
+        "#,
+        role_id
+    )
+    .fetch_all(database_connection)
+    .await?
+    .iter()
+    .map(|record| record.id)
+    .collect::<Vec<i64>>())
+}
+
+pub async fn read_all_id_for_gender(
+    gender: &bool,
+    database_connection: &Pool<Postgres>,
+) -> Result<Vec<i64>, sqlx::Error> {
+    Ok(sqlx::query!(
+        r#"
+            SELECT "id" FROM "user" WHERE "gender" = $1
+        "#,
+        gender
+    )
+    .fetch_all(database_connection)
+    .await?
+    .iter()
+    .map(|record| record.id)
+    .collect::<Vec<i64>>())
+}
+
+pub async fn read_all_id_for_name(
+    name: &String,
+    database_connection: &Pool<Postgres>,
+) -> Result<Vec<i64>, sqlx::Error> {
+    Ok(sqlx::query!(
+        r#"
+            SELECT "id" FROM "user" WHERE "name" = $1
+        "#,
+        name
+    )
+    .fetch_all(database_connection)
+    .await?
+    .iter()
+    .map(|record| record.id)
+    .collect::<Vec<i64>>())
+}
+
+pub async fn read_all_id_for_surname(
+    surname: &String,
+    database_connection: &Pool<Postgres>,
+) -> Result<Vec<i64>, sqlx::Error> {
+    Ok(sqlx::query!(
+        r#"
+            SELECT "id" FROM "user" WHERE "surname" = $1
+        "#,
+        surname
+    )
+    .fetch_all(database_connection)
+    .await?
+    .iter()
+    .map(|record| record.id)
+    .collect::<Vec<i64>>())
+}
+
+pub async fn count_all(database_connection: &Pool<Postgres>) -> Result<u64, sqlx::Error> {
+    sqlx::query!(
+        r#"
+            SELECT COUNT(id) FROM "user"
+        "#,
+    )
+    .fetch_one(database_connection)
+    .await?
+    .count
+    .map_or(0, |count| count)
+    .try_into()
+    .or(Ok(0))
+}
+
+pub async fn count_all_for_gender(
+    gender: &bool,
+    database_connection: &Pool<Postgres>,
+) -> Result<u64, sqlx::Error> {
+    sqlx::query!(
+        r#"
+            SELECT COUNT(id) FROM "user" WHERE "gender" = $1
+        "#,
+        gender
+    )
+    .fetch_one(database_connection)
+    .await?
+    .count
+    .map_or(0, |count| count)
+    .try_into()
+    .or(Ok(0))
+}
+
+pub async fn count_all_for_role(
+    role_id: &i64,
+    database_connection: &Pool<Postgres>,
+) -> Result<u64, sqlx::Error> {
+    sqlx::query!(
+        r#"
+            SELECT COUNT(id) FROM "user" WHERE "role_id" = $1
+        "#,
+        role_id
+    )
+    .fetch_one(database_connection)
+    .await?
+    .count
+    .map_or(0, |count| count)
+    .try_into()
+    .or(Ok(0))
+}
+
+pub async fn count_all_for_name(
+    name: &String,
+    database_connection: &Pool<Postgres>,
+) -> Result<u64, sqlx::Error> {
+    sqlx::query!(
+        r#"
+            SELECT COUNT(id) FROM "user" WHERE "name" = $1
+        "#,
+        name
+    )
+    .fetch_one(database_connection)
+    .await?
+    .count
+    .map_or(0, |count| count)
+    .try_into()
+    .or(Ok(0))
+}
+
+pub async fn count_all_for_surname(
+    surname: &String,
+    database_connection: &Pool<Postgres>,
+) -> Result<u64, sqlx::Error> {
+    sqlx::query!(
+        r#"
+            SELECT COUNT(id) FROM "user" WHERE "surname" = $1
+        "#,
+        surname
+    )
+    .fetch_one(database_connection)
+    .await?
+    .count
+    .map_or(0, |count| count)
+    .try_into()
+    .or(Ok(0))
 }
