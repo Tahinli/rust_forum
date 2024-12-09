@@ -5,8 +5,8 @@ use crate::feature::comment_interaction::CommentInteraction;
 
 pub async fn create(
     comment_creation_time: &DateTime<Utc>,
-    interaction_id: i64,
-    interactor_id: i64,
+    interaction_id: &i64,
+    interactor_id: &i64,
     database_connection: &Pool<Postgres>,
 ) -> Result<CommentInteraction, sqlx::Error> {
     sqlx::query_as!(
@@ -41,7 +41,7 @@ pub async fn read(
 
 pub async fn update(
     interaction_time: &DateTime<Utc>,
-    interaction_id: i64,
+    interaction_id: &i64,
     database_connection: &Pool<Postgres>,
 ) -> Result<CommentInteraction, sqlx::Error> {
     sqlx::query_as!(

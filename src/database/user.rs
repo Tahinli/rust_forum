@@ -268,6 +268,23 @@ pub async fn read_all_id_for_surname(
     .collect::<Vec<i64>>())
 }
 
+pub async fn read_all_id_for_birth_date(
+    birth_date: &NaiveDate,
+    database_connection: &Pool<Postgres>,
+) -> Result<Vec<i64>, sqlx::Error> {
+    Ok(sqlx::query!(
+        r#"
+            SELECT "id" FROM "user" WHERE "birth_date" = $1
+        "#,
+        birth_date
+    )
+    .fetch_all(database_connection)
+    .await?
+    .iter()
+    .map(|record| record.id)
+    .collect::<Vec<i64>>())
+}
+
 pub async fn count_all(database_connection: &Pool<Postgres>) -> Result<u64, sqlx::Error> {
     sqlx::query!(
         r#"
@@ -345,6 +362,24 @@ pub async fn count_all_for_surname(
             SELECT COUNT(id) FROM "user" WHERE "surname" = $1
         "#,
         surname
+    )
+    .fetch_one(database_connection)
+    .await?
+    .count
+    .map_or(0, |count| count)
+    .try_into()
+    .or(Ok(0))
+}
+
+pub async fn count_all_for_birth_date(
+    birth_date: &NaiveDate,
+    database_connection: &Pool<Postgres>,
+) -> Result<u64, sqlx::Error> {
+    sqlx::query!(
+        r#"
+            SELECT COUNT(id) FROM "user" WHERE "birth_date" = $1
+        "#,
+        birth_date
     )
     .fetch_one(database_connection)
     .await?

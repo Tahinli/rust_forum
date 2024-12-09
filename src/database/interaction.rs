@@ -35,7 +35,7 @@ pub async fn read(
 }
 
 pub async fn update(
-    id: i64,
+    id: &i64,
     name: &String,
     database_connection: &Pool<Postgres>,
 ) -> Result<Interaction, sqlx::Error> {
@@ -53,7 +53,7 @@ pub async fn update(
 }
 
 pub async fn delete(
-    id: i64,
+    id: &i64,
     database_connection: &Pool<Postgres>,
 ) -> Result<Interaction, sqlx::Error> {
     sqlx::query_as!(

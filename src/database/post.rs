@@ -4,7 +4,7 @@ use sqlx::{Pool, Postgres};
 use crate::feature::post::Post;
 
 pub async fn create(
-    poster_id: i64,
+    poster_id: &i64,
     post: &String,
     database_connection: &Pool<Postgres>,
 ) -> Result<Post, sqlx::Error> {
@@ -39,7 +39,7 @@ pub async fn read(
 
 pub async fn update(
     creation_time: &DateTime<Utc>,
-    poster_id: i64,
+    poster_id: &i64,
     post: &String,
     database_connection: &Pool<Postgres>,
 ) -> Result<Post, sqlx::Error> {
@@ -85,7 +85,7 @@ pub async fn read_all(database_connection: &Pool<Postgres>) -> Result<Vec<Post>,
 }
 
 pub async fn read_all_for_user(
-    poster_id: i64,
+    poster_id: &i64,
     database_connection: &Pool<Postgres>,
 ) -> Result<Vec<Post>, sqlx::Error> {
     sqlx::query_as!(

@@ -4,8 +4,8 @@ use sqlx::{Pool, Postgres};
 use crate::feature::comment::Comment;
 
 pub async fn create(
-    post_creation_time: DateTime<Utc>,
-    commenter_id: i64,
+    post_creation_time: &DateTime<Utc>,
+    commenter_id: &i64,
     comment: &String,
     database_connection: &Pool<Postgres>,
 ) -> Result<Comment, sqlx::Error> {
@@ -25,7 +25,7 @@ pub async fn create(
 }
 
 pub async fn read(
-    creation_time: DateTime<Utc>,
+    creation_time: &DateTime<Utc>,
     database_connection: &Pool<Postgres>,
 ) -> Result<Comment, sqlx::Error> {
     sqlx::query_as!(
@@ -40,7 +40,7 @@ pub async fn read(
 }
 
 pub async fn update(
-    creation_time: DateTime<Utc>,
+    creation_time: &DateTime<Utc>,
     comment: &String,
     database_connection: &Pool<Postgres>,
 ) -> Result<Comment, sqlx::Error> {
@@ -58,7 +58,7 @@ pub async fn update(
 }
 
 pub async fn delete(
-    creation_time: DateTime<Utc>,
+    creation_time: &DateTime<Utc>,
     database_connection: &Pool<Postgres>,
 ) -> Result<Comment, sqlx::Error> {
     sqlx::query_as!(
@@ -74,7 +74,7 @@ pub async fn delete(
 }
 
 pub async fn read_all_for_post(
-    post_creation_time: DateTime<Utc>,
+    post_creation_time: &DateTime<Utc>,
     database_connection: &Pool<Postgres>,
 ) -> Result<Vec<Comment>, sqlx::Error> {
     sqlx::query_as!(

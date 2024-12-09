@@ -35,7 +35,7 @@ pub async fn read(
 }
 
 pub async fn update(
-    id: i64,
+    id: &i64,
     name: &String,
     database_connection: &Pool<Postgres>,
 ) -> Result<Role, sqlx::Error> {
@@ -52,7 +52,7 @@ pub async fn update(
     .await
 }
 
-pub async fn delete(id: i64, database_connection: &Pool<Postgres>) -> Result<Role, sqlx::Error> {
+pub async fn delete(id: &i64, database_connection: &Pool<Postgres>) -> Result<Role, sqlx::Error> {
     sqlx::query_as!(
         Role,
         r#"
