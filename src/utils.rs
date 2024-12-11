@@ -1,5 +1,7 @@
 use std::{fs::File, io::Read};
 
+use crate::error::ForumInputError;
+
 pub fn naive_toml_parser(file_location: &str) -> (String, Vec<String>) {
     let mut toml_file = File::open(file_location).unwrap();
     let mut toml_ingredients = String::default();
@@ -21,4 +23,17 @@ pub fn naive_toml_parser(file_location: &str) -> (String, Vec<String>) {
         .collect();
 
     (header, parsed)
+}
+
+pub fn input_checker(input: &String) -> Result<String, ForumInputError> {
+    if input.is_empty() {
+        Err(ForumInputError::EmptyParameter)
+    } else {
+        let input_without_space = input.split(' ').collect::<Vec<_>>().join("");
+        if input_without_space.chars().all(char::is_alphanumeric) {
+            Ok(input.to_owned())
+        } else {
+            Err(ForumInputError::ForbiddenCharacter)
+        }
+    }
 }
