@@ -19,16 +19,13 @@ pub async fn create(
     .await
 }
 
-pub async fn read(
-    name: &String,
-    database_connection: &Pool<Postgres>,
-) -> Result<Role, sqlx::Error> {
+pub async fn read(id: &i64, database_connection: &Pool<Postgres>) -> Result<Role, sqlx::Error> {
     sqlx::query_as!(
         Role,
         r#"
-            SELECT * FROM "role" WHERE "name" = $1
+            SELECT * FROM "role" WHERE "id" = $1
         "#,
-        name
+        id
     )
     .fetch_one(database_connection)
     .await
@@ -62,5 +59,16 @@ pub async fn delete(id: &i64, database_connection: &Pool<Postgres>) -> Result<Ro
         id
     )
     .fetch_one(database_connection)
+    .await
+}
+
+pub async fn read_all(database_connection: &Pool<Postgres>) -> Result<Vec<Role>, sqlx::Error> {
+    sqlx::query_as!(
+        Role,
+        r#"
+            SELECT * FROM "role"
+        "#,
+    )
+    .fetch_all(database_connection)
     .await
 }

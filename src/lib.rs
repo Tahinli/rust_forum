@@ -1,6 +1,8 @@
 pub mod database;
 pub mod error;
 pub mod feature;
+pub mod routing;
+pub mod server;
 pub mod utils;
 
 use sqlx::{Pool, Postgres};
