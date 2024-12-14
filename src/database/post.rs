@@ -46,12 +46,12 @@ pub async fn update(
     sqlx::query_as!(
         Post,
         r#"
-        UPDATE "post" SET poster_id = $1, post = $2 WHERE "creation_time" = $3
+        UPDATE "post" SET poster_id = $2, post = $3 WHERE "creation_time" = $1
         RETURNING *
     "#,
+        creation_time,
         poster_id,
-        post,
-        creation_time
+        post
     )
     .fetch_one(database_connection)
     .await

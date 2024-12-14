@@ -39,11 +39,11 @@ pub async fn update(
     sqlx::query_as!(
         Role,
         r#"
-        UPDATE "role" SET "name" = $1 WHERE "id" = $2
+        UPDATE "role" SET "name" = $2 WHERE "id" = $1
         RETURNING *
     "#,
+        id,
         name,
-        id
     )
     .fetch_one(database_connection)
     .await

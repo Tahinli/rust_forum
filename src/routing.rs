@@ -1,4 +1,5 @@
 pub mod role;
+pub mod user;
 
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::get, Router};
 use tower_http::cors::CorsLayer;
@@ -11,6 +12,10 @@ pub async fn route(State(app_state): State<AppState>) -> Router {
         .nest(
             "/role",
             role::route(axum::extract::State(app_state.clone())),
+        )
+        .nest(
+            "/user",
+            user::route(axum::extract::State(app_state.clone())),
         )
         .layer(CorsLayer::permissive())
         .with_state(app_state)

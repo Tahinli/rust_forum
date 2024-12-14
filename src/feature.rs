@@ -1,5 +1,6 @@
 pub mod comment;
 pub mod comment_interaction;
+pub mod contact;
 pub mod interaction;
 pub mod permission;
 pub mod post;

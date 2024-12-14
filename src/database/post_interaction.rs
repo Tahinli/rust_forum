@@ -47,11 +47,11 @@ pub async fn update(
     sqlx::query_as!(
         PostInteraction,
         r#"
-        UPDATE "post_interaction" SET "interaction_id" = $1 WHERE "interaction_time" = $2
+        UPDATE "post_interaction" SET "interaction_id" = $2 WHERE "interaction_time" = $1
         RETURNING *
     "#,
+        interaction_time,
         interaction_id,
-        interaction_time
     )
     .fetch_one(database_connection)
     .await

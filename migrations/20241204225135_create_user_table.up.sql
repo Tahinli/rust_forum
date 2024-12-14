@@ -5,7 +5,6 @@ CREATE TABLE IF NOT EXISTS "user"(
     surname VARCHAR(255) NOT NULL,
     gender boolean NOT NULL,
     birth_date DATE NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
     role_id BIGSERIAL NOT NULL REFERENCES "role"(id),
     creation_time TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

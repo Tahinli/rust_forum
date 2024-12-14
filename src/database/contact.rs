@@ -1,68 +1,68 @@
 use sqlx::{Pool, Postgres};
 
-use crate::feature::interaction::Interaction;
+use crate::feature::contact::Contact;
 
 pub async fn create(
-    name: &String,
+    email: &String,
     database_connection: &Pool<Postgres>,
-) -> Result<Interaction, sqlx::Error> {
+) -> Result<Contact, sqlx::Error> {
     sqlx::query_as!(
-        Interaction,
+        Contact,
         r#"
-            INSERT INTO "interaction"(name) 
+            INSERT INTO "contact"(email) 
             VALUES ($1) 
             RETURNING *
         "#,
-        name,
+        email,
     )
     .fetch_one(database_connection)
     .await
 }
 
 pub async fn read(
-    name: &String,
+    user_id: &i64,
     database_connection: &Pool<Postgres>,
-) -> Result<Interaction, sqlx::Error> {
+) -> Result<Contact, sqlx::Error> {
     sqlx::query_as!(
-        Interaction,
+        Contact,
         r#"
-            SELECT * FROM "interaction" WHERE "name" = $1
+            SELECT * FROM "contact" WHERE "user_id" = $1
         "#,
-        name
+        user_id
     )
     .fetch_one(database_connection)
     .await
 }
 
 pub async fn update(
-    id: &i64,
-    name: &String,
+    user_id: &i64,
+    email: &String,
     database_connection: &Pool<Postgres>,
-) -> Result<Interaction, sqlx::Error> {
+) -> Result<Contact, sqlx::Error> {
     sqlx::query_as!(
-        Interaction,
+        Contact,
         r#"
-        UPDATE "interaction" SET "name" = $2 WHERE "id" = $1
+        UPDATE "contact" SET "email" = $2 WHERE "user_id" = $1
         RETURNING *
     "#,
-        id,
-        name
+        user_id,
+        email,
     )
     .fetch_one(database_connection)
     .await
 }
 
 pub async fn delete(
-    id: &i64,
+    user_id: &i64,
     database_connection: &Pool<Postgres>,
-) -> Result<Interaction, sqlx::Error> {
+) -> Result<Contact, sqlx::Error> {
     sqlx::query_as!(
-        Interaction,
+        Contact,
         r#"
-        DELETE FROM "interaction" where "id" = $1
+        DELETE FROM "contact" where "user_id" = $1
         RETURNING *
     "#,
-        id
+        user_id
     )
     .fetch_one(database_connection)
     .await

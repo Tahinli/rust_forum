@@ -8,21 +8,19 @@ pub async fn create(
     surname: &String,
     gender: &bool,
     birth_date: &NaiveDate,
-    email: &String,
     database_connection: &Pool<Postgres>,
 ) -> Result<User, sqlx::Error> {
     sqlx::query_as!(
         User,
         r#"
-            INSERT INTO "user"(name, surname, gender, birth_date, email, role_id) 
-            VALUES ($1, $2, $3, $4, $5, $6) 
+            INSERT INTO "user"(name, surname, gender, birth_date, role_id) 
+            VALUES ($1, $2, $3, $4, $5) 
             RETURNING *
         "#,
         name,
         surname,
         gender,
         birth_date,
-        email,
         2
     )
     .fetch_one(database_connection)
@@ -47,15 +45,14 @@ pub async fn update(
     surname: &String,
     gender: &bool,
     birth_date: &NaiveDate,
-    email: &String,
     role_id: &i64,
     database_connection: &Pool<Postgres>,
 ) -> Result<User, sqlx::Error> {
     sqlx::query_as!(User,
     r#"
-        UPDATE "user" SET "name" = $1, "surname" = $2, "gender" = $3, "birth_date" = $4, "email" = $5, "role_id" = $6 WHERE "id" = $7
+        UPDATE "user" SET "name" = $2, "surname" = $3, "gender" = $4, "birth_date" = $5, "role_id" = $6 WHERE "id" = $1
         RETURNING *
-    "#, name, surname, gender, birth_date, email, role_id, id).fetch_one(database_connection).await
+    "#, id, name, surname, gender, birth_date, role_id).fetch_one(database_connection).await
 }
 
 pub async fn delete(id: &i64, database_connection: &Pool<Postgres>) -> Result<User, sqlx::Error> {
@@ -79,21 +76,6 @@ pub async fn read_all(database_connection: &Pool<Postgres>) -> Result<Vec<User>,
         "#,
     )
     .fetch_all(database_connection)
-    .await
-}
-
-pub async fn read_with_email(
-    email: &String,
-    database_connection: &Pool<Postgres>,
-) -> Result<User, sqlx::Error> {
-    sqlx::query_as!(
-        User,
-        r#"
-            SELECT * FROM "user" WHERE "email" = $1
-        "#,
-        email
-    )
-    .fetch_one(database_connection)
     .await
 }
 
@@ -170,21 +152,6 @@ pub async fn read_all_for_gender(
     )
     .fetch_all(database_connection)
     .await
-}
-
-pub async fn read_id_with_email(
-    email: &String,
-    database_connection: &Pool<Postgres>,
-) -> Result<i64, sqlx::Error> {
-    Ok(sqlx::query!(
-        r#"
-            SELECT "id" FROM "user" WHERE "email" = $1
-        "#,
-        email
-    )
-    .fetch_one(database_connection)
-    .await?
-    .id)
 }
 
 pub async fn read_all_id(database_connection: &Pool<Postgres>) -> Result<Vec<i64>, sqlx::Error> {

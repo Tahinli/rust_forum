@@ -47,11 +47,11 @@ pub async fn update(
     sqlx::query_as!(
         Comment,
         r#"
-        UPDATE "comment" SET "comment" = $1 WHERE "creation_time" = $2
+        UPDATE "comment" SET "comment" = $2 WHERE "creation_time" = $1
         RETURNING *
     "#,
-        comment,
-        creation_time
+        creation_time,
+        comment
     )
     .fetch_one(database_connection)
     .await
