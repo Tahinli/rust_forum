@@ -5,20 +5,20 @@ use crate::feature::comment_interaction::CommentInteraction;
 
 pub async fn create(
     comment_creation_time: &DateTime<Utc>,
+    user_id: &i64,
     interaction_id: &i64,
-    interactor_id: &i64,
     database_connection: &Pool<Postgres>,
 ) -> Result<CommentInteraction, sqlx::Error> {
     sqlx::query_as!(
         CommentInteraction,
         r#"
-            INSERT INTO "comment_interaction"(comment_creation_time, interaction_id, interactor_id) 
+            INSERT INTO "comment_interaction"(comment_creation_time, user_id, interaction_id) 
             VALUES ($1, $2, $3) 
             RETURNING *
         "#,
         comment_creation_time,
+        user_id,
         interaction_id,
-        interactor_id,
     )
     .fetch_one(database_connection)
     .await

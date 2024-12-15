@@ -5,20 +5,20 @@ use crate::feature::post_interaction::PostInteraction;
 
 pub async fn create(
     post_creation_time: &DateTime<Utc>,
+    user_id: &i64,
     interaction_id: &i64,
-    interactor_id: &i64,
     database_connection: &Pool<Postgres>,
 ) -> Result<PostInteraction, sqlx::Error> {
     sqlx::query_as!(
         PostInteraction,
         r#"
-            INSERT INTO "post_interaction"(post_creation_time, interaction_id, interactor_id) 
+            INSERT INTO "post_interaction"(post_creation_time, user_id, interaction_id) 
             VALUES ($1, $2, $3) 
             RETURNING *
         "#,
         post_creation_time,
+        user_id,
         interaction_id,
-        interactor_id,
     )
     .fetch_one(database_connection)
     .await

@@ -4,18 +4,18 @@ use sqlx::{Pool, Postgres};
 use crate::feature::post::Post;
 
 pub async fn create(
-    poster_id: &i64,
+    user_id: &i64,
     post: &String,
     database_connection: &Pool<Postgres>,
 ) -> Result<Post, sqlx::Error> {
     sqlx::query_as!(
         Post,
         r#"
-            INSERT INTO "post"(poster_id, post) 
+            INSERT INTO "post"(user_id, post) 
             VALUES ($1, $2) 
             RETURNING *
         "#,
-        poster_id,
+        user_id,
         post
     )
     .fetch_one(database_connection)
@@ -39,18 +39,18 @@ pub async fn read(
 
 pub async fn update(
     creation_time: &DateTime<Utc>,
-    poster_id: &i64,
+    user_id: &i64,
     post: &String,
     database_connection: &Pool<Postgres>,
 ) -> Result<Post, sqlx::Error> {
     sqlx::query_as!(
         Post,
         r#"
-        UPDATE "post" SET poster_id = $2, post = $3 WHERE "creation_time" = $1
+        UPDATE "post" SET user_id = $2, post = $3 WHERE "creation_time" = $1
         RETURNING *
     "#,
         creation_time,
-        poster_id,
+        user_id,
         post
     )
     .fetch_one(database_connection)
@@ -85,15 +85,15 @@ pub async fn read_all(database_connection: &Pool<Postgres>) -> Result<Vec<Post>,
 }
 
 pub async fn read_all_for_user(
-    poster_id: &i64,
+    user_id: &i64,
     database_connection: &Pool<Postgres>,
 ) -> Result<Vec<Post>, sqlx::Error> {
     sqlx::query_as!(
         Post,
         r#"
-            SELECT * FROM "post" WHERE "poster_id" = $1
+            SELECT * FROM "post" WHERE "user_id" = $1
         "#,
-        poster_id
+        user_id
     )
     .fetch_all(database_connection)
     .await

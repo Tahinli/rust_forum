@@ -5,6 +5,6 @@ use serde::{Deserialize, Serialize};
 pub struct Comment {
     pub post_creation_time: DateTime<Utc>,
     pub creation_time: DateTime<Utc>,
-    pub commenter_id: i64,
+    pub user_id: i64,
     pub comment: String,
 }

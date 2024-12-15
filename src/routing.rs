@@ -1,3 +1,4 @@
+pub mod post;
 pub mod role;
 pub mod user;
 
