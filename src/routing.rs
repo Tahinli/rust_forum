@@ -5,6 +5,7 @@ pub mod permission;
 pub mod post;
 pub mod post_interaction;
 pub mod role;
+pub mod role_permission;
 pub mod user;
 
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::get, Router};
@@ -42,6 +43,10 @@ pub async fn route(State(app_state): State<AppState>) -> Router {
         .nest(
             "/comment_interactions",
             comment_interaction::route(axum::extract::State(app_state.clone())),
+        )
+        .nest(
+            "/role_permissions",
+            role_permission::route(axum::extract::State(app_state.clone())),
         )
         .layer(CorsLayer::permissive())
         .with_state(app_state)
