@@ -1,3 +1,4 @@
+pub mod comment;
 pub mod post;
 pub mod role;
 pub mod user;
@@ -11,12 +12,20 @@ pub async fn route(State(app_state): State<AppState>) -> Router {
     Router::new()
         .route("/", get(alive))
         .nest(
-            "/role",
+            "/roles",
             role::route(axum::extract::State(app_state.clone())),
         )
         .nest(
-            "/user",
+            "/users",
             user::route(axum::extract::State(app_state.clone())),
+        )
+        .nest(
+            "/posts",
+            post::route(axum::extract::State(app_state.clone())),
+        )
+        .nest(
+            "/comments",
+            comment::route(axum::extract::State(app_state.clone())),
         )
         .layer(CorsLayer::permissive())
         .with_state(app_state)
