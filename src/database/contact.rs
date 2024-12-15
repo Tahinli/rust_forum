@@ -3,66 +3,63 @@ use sqlx::{Pool, Postgres};
 use crate::feature::contact::Contact;
 
 pub async fn create(
-    email: &String,
+    name: &String,
     database_connection: &Pool<Postgres>,
 ) -> Result<Contact, sqlx::Error> {
     sqlx::query_as!(
         Contact,
         r#"
-            INSERT INTO "contact"(email) 
+            INSERT INTO "contact"(name) 
             VALUES ($1) 
             RETURNING *
         "#,
-        email,
+        name,
     )
     .fetch_one(database_connection)
     .await
 }
 
-pub async fn read(
-    user_id: &i64,
-    database_connection: &Pool<Postgres>,
-) -> Result<Contact, sqlx::Error> {
+pub async fn read(id: &i64, database_connection: &Pool<Postgres>) -> Result<Contact, sqlx::Error> {
     sqlx::query_as!(
         Contact,
         r#"
-            SELECT * FROM "contact" WHERE "user_id" = $1
+            SELECT * FROM "contact" WHERE "id" = $1
         "#,
-        user_id
+        id
     )
     .fetch_one(database_connection)
     .await
 }
 
 pub async fn update(
-    user_id: &i64,
-    email: &String,
+    id: &i64,
+    name: &String,
     database_connection: &Pool<Postgres>,
 ) -> Result<Contact, sqlx::Error> {
     sqlx::query_as!(
         Contact,
         r#"
-        UPDATE "contact" SET "email" = $2 WHERE "user_id" = $1
+        UPDATE "contact" SET "name" = $2 WHERE "id" = $1
         RETURNING *
     "#,
-        user_id,
-        email,
+        id,
+        name,
     )
     .fetch_one(database_connection)
     .await
 }
 
 pub async fn delete(
-    user_id: &i64,
+    id: &i64,
     database_connection: &Pool<Postgres>,
 ) -> Result<Contact, sqlx::Error> {
     sqlx::query_as!(
         Contact,
         r#"
-        DELETE FROM "contact" where "user_id" = $1
+        DELETE FROM "contact" WHERE "id" = $1
         RETURNING *
     "#,
-        user_id
+        id
     )
     .fetch_one(database_connection)
     .await

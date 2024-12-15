@@ -59,7 +59,7 @@ pub async fn delete(
     sqlx::query_as!(
         Interaction,
         r#"
-        DELETE FROM "interaction" where "id" = $1
+        DELETE FROM "interaction" WHERE "id" = $1
         RETURNING *
     "#,
         id

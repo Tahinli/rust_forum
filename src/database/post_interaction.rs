@@ -64,7 +64,7 @@ pub async fn delete(
     sqlx::query_as!(
         PostInteraction,
         r#"
-        DELETE FROM "post_interaction" where "interaction_time" = $1
+        DELETE FROM "post_interaction" WHERE "interaction_time" = $1
         RETURNING *
     "#,
         interaction_time

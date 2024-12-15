@@ -64,7 +64,7 @@ pub async fn delete(
     sqlx::query_as!(
         Comment,
         r#"
-        DELETE FROM "comment" where "creation_time" = $1
+        DELETE FROM "comment" WHERE "creation_time" = $1
         RETURNING *
     "#,
         creation_time
