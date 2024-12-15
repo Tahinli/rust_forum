@@ -20,15 +20,15 @@ pub async fn create(
 }
 
 pub async fn read(
-    name: &String,
+    id: &i64,
     database_connection: &Pool<Postgres>,
 ) -> Result<Interaction, sqlx::Error> {
     sqlx::query_as!(
         Interaction,
         r#"
-            SELECT * FROM "interaction" WHERE "name" = $1
+            SELECT * FROM "interaction" WHERE "id" = $1
         "#,
-        name
+        id
     )
     .fetch_one(database_connection)
     .await
@@ -65,5 +65,18 @@ pub async fn delete(
         id
     )
     .fetch_one(database_connection)
+    .await
+}
+
+pub async fn read_all(
+    database_connection: &Pool<Postgres>,
+) -> Result<Vec<Interaction>, sqlx::Error> {
+    sqlx::query_as!(
+        Interaction,
+        r#"
+            SELECT * FROM "interaction"
+        "#,
+    )
+    .fetch_all(database_connection)
     .await
 }
