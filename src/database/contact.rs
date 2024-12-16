@@ -64,3 +64,14 @@ pub async fn delete(
     .fetch_one(database_connection)
     .await
 }
+
+pub async fn read_all(database_connection: &Pool<Postgres>) -> Result<Vec<Contact>, sqlx::Error> {
+    sqlx::query_as!(
+        Contact,
+        r#"
+            SELECT * FROM "contact"
+        "#,
+    )
+    .fetch_all(database_connection)
+    .await
+}
