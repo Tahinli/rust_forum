@@ -30,8 +30,8 @@ pub fn route(State(app_state): State<AppState>) -> Router<AppState> {
             "/roles/:role_id/permissions/:permission_id",
             delete(delete_),
         )
-        .route("/role/:role_id", get(read_all_for_role))
-        .route("/role/:role_id", delete(delete_all_for_role))
+        .route("/roles/:role_id", get(read_all_for_role))
+        .route("/roles/:role_id", delete(delete_all_for_role))
         .with_state(app_state)
 }
 
