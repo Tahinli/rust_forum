@@ -1,14 +1,14 @@
-use std::{fs::File, io::Read};
+use std::{collections::VecDeque, fs::File, io::Read};
 
 use crate::error::ForumInputError;
 
-pub fn naive_toml_parser(file_location: &str) -> (String, Vec<String>) {
+pub fn naive_toml_parser(file_location: &str) -> (String, VecDeque<String>) {
     let mut toml_file = File::open(file_location).unwrap();
     let mut toml_ingredients = String::default();
     toml_file.read_to_string(&mut toml_ingredients).unwrap();
-    let mut toml_ingredients = toml_ingredients.lines().collect::<Vec<&str>>();
+    let mut toml_ingredients = toml_ingredients.lines().collect::<VecDeque<&str>>();
 
-    let header = toml_ingredients.remove(0).trim_end().to_string();
+    let header = toml_ingredients.pop_front().unwrap().trim_end().to_string();
     let parsed = toml_ingredients
         .iter()
         .map(|ingredient| {

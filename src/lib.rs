@@ -1,6 +1,7 @@
 pub mod database;
 pub mod error;
 pub mod feature;
+pub mod mail;
 pub mod routing;
 pub mod server;
 pub mod utils;
@@ -26,12 +27,12 @@ impl Default for DatabaseConfig {
 
         if header == "[database_config]" {
             Self {
-                connection_pool_size: database_configs.pop().unwrap().parse().unwrap(),
-                backend: database_configs.pop().unwrap(),
-                database: database_configs.pop().unwrap(),
-                password: database_configs.pop().unwrap(),
-                username: database_configs.pop().unwrap(),
-                address: database_configs.pop().unwrap(),
+                address: database_configs.pop_front().unwrap().parse().unwrap(),
+                username: database_configs.pop_front().unwrap().parse().unwrap(),
+                password: database_configs.pop_front().unwrap().parse().unwrap(),
+                database: database_configs.pop_front().unwrap().parse().unwrap(),
+                backend: database_configs.pop_front().unwrap().parse().unwrap(),
+                connection_pool_size: database_configs.pop_front().unwrap().parse().unwrap(),
             }
         } else {
             panic!("Database Config File Must Include [database_config] at the First Line")
@@ -50,7 +51,7 @@ impl Default for ServerConfig {
 
         if header == "[server_config]" {
             Self {
-                address: server_configs.pop().unwrap(),
+                address: server_configs.pop_front().unwrap().parse().unwrap(),
             }
         } else {
             panic!("Server Config File Must Include [server_config] at the First Line")

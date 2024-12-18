@@ -1,0 +1,8 @@
+[mail_config]
+name = "Ahmet Kaan Gümüş"
+mail_address = "mail@mail.com"
+username = "username"
+password = "password"
+relay_address = "localhost"
+port = 587
+starttls = true
