@@ -7,6 +7,7 @@ pub mod post;
 pub mod post_interaction;
 pub mod role;
 pub mod role_permission;
+pub mod routing;
 pub mod user;
 pub mod user_contact;
 
@@ -57,6 +58,10 @@ pub async fn route(State(app_state): State<AppState>) -> Router {
         .nest(
             "/user_contacts",
             user_contact::route(axum::extract::State(app_state.clone())),
+        )
+        .nest(
+            "/routings",
+            routing::route(axum::extract::State(app_state.clone())),
         )
         .layer(CorsLayer::permissive())
         .with_state(app_state)
