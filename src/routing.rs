@@ -13,6 +13,7 @@ pub mod user;
 pub mod user_contact;
 
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::get, Router};
+use tower::limit::ConcurrencyLimitLayer;
 use tower_http::cors::CorsLayer;
 
 use crate::{database, AppState};
@@ -69,6 +70,7 @@ pub async fn route(State(app_state): State<AppState>) -> Router {
             routing_permission::route(axum::extract::State(app_state.clone())),
         )
         .layer(CorsLayer::permissive())
+        .layer(ConcurrencyLimitLayer::new(100))
         .with_state(app_state)
 }
 
