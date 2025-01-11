@@ -2,6 +2,7 @@ pub mod comment;
 pub mod comment_interaction;
 pub mod contact;
 pub mod interaction;
+pub mod login;
 pub mod permission;
 pub mod post;
 pub mod post_interaction;
@@ -18,7 +19,7 @@ use tower_http::cors::CorsLayer;
 
 use crate::{database, AppState};
 
-pub async fn route(State(app_state): State<AppState>) -> Router {
+pub async fn route(concurrency_limit: &usize, State(app_state): State<AppState>) -> Router {
     Router::new()
         .route("/", get(alive))
         .nest(
@@ -70,7 +71,7 @@ pub async fn route(State(app_state): State<AppState>) -> Router {
             routing_permission::route(axum::extract::State(app_state.clone())),
         )
         .layer(CorsLayer::permissive())
-        .layer(ConcurrencyLimitLayer::new(100))
+        .layer(ConcurrencyLimitLayer::new(*concurrency_limit))
         .with_state(app_state)
 }
 

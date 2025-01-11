@@ -1,7 +1,9 @@
+pub mod auth;
 pub mod comment;
 pub mod comment_interaction;
 pub mod contact;
 pub mod interaction;
+pub mod login;
 pub mod permission;
 pub mod post;
 pub mod post_interaction;

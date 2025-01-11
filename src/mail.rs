@@ -4,9 +4,11 @@ use lettre::{
     AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
 };
 
-use crate::utils::naive_toml_parser;
+use crate::{error::ForumMailError, feature::auth::OneTimePassword, utils::naive_toml_parser};
 
 const MAIL_CONFIG_FILE_LOCATION: &str = "./configs/mail_config.toml";
+const ONE_TIME_PASSWORD_MAIL_TEMPLATE_FILE_LOCATION: &str =
+    "./mail_templates/one_time_password.toml";
 
 pub struct MailConfig {
     name: String,
@@ -38,7 +40,58 @@ impl Default for MailConfig {
     }
 }
 
-pub async fn send_mail(
+pub struct MailFieldsOneTimePassword {
+    receiver_name: String,
+    one_time_password: OneTimePassword,
+}
+
+impl MailFieldsOneTimePassword {
+    pub fn new(receiver_name: &String, one_time_password: &OneTimePassword) -> Self {
+        Self {
+            receiver_name: receiver_name.to_owned(),
+            one_time_password: one_time_password.to_owned(),
+        }
+    }
+}
+pub enum MailTemplate {
+    OneTimePassword(MailFieldsOneTimePassword),
+}
+
+impl MailTemplate {
+    pub async fn send_mail(
+        &self,
+        receiver: &String,
+    ) -> Result<smtp::response::Response, ForumMailError> {
+        match self {
+            MailTemplate::OneTimePassword(mail_fields) => {
+                let mut mail_template_from_file =
+                    naive_toml_parser(ONE_TIME_PASSWORD_MAIL_TEMPLATE_FILE_LOCATION);
+                if mail_template_from_file.0 == "one_time_password" {
+                    let subject = match mail_template_from_file.1.pop_front() {
+                        Some(subject) => subject,
+                        None => return Err(ForumMailError::TemplateLackOfParameter),
+                    };
+                    let body = match mail_template_from_file.1.pop_front() {
+                        Some(body) => body,
+                        None => return Err(ForumMailError::TemplateLackOfParameter),
+                    };
+
+                    let body = body.replacen('*', &mail_fields.receiver_name, 1);
+                    let body =
+                        body.replacen('*', &mail_fields.one_time_password.one_time_password, 1);
+
+                    send_mail(receiver, &subject, &body)
+                        .await
+                        .map_err(|error| ForumMailError::Send(error.to_string()))
+                } else {
+                    Err(ForumMailError::TemplateHeader)
+                }
+            }
+        }
+    }
+}
+
+async fn send_mail(
     receiver: &String,
     subject: &String,
     body: &String,

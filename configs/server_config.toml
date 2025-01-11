@@ -1,2 +1,5 @@
 [server_config]
 address = "localhost:2344"
+otp_time_limit = 15
+login_token_time_limit = 15
+concurrency_limit = -1
