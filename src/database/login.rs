@@ -10,8 +10,8 @@ pub async fn create(
     sqlx::query_as!(
         Login,
         r#"
-            INSERT INTO "login"(user_id, token) 
-            VALUES ($1, $2) 
+            INSERT INTO "login"(user_id, token)
+            VALUES ($1, $2)
             RETURNING *
         "#,
         user_id,
@@ -33,24 +33,6 @@ pub async fn read(
         "#,
         user_id,
         token
-    )
-    .fetch_one(database_connection)
-    .await
-}
-
-pub async fn update(
-    user_id: &i64,
-    token: &String,
-    database_connection: &Pool<Postgres>,
-) -> Result<Login, sqlx::Error> {
-    sqlx::query_as!(
-        Login,
-        r#"
-        UPDATE "login" SET "token" = $2 WHERE "user_id" = $1
-        RETURNING *
-    "#,
-        user_id,
-        token,
     )
     .fetch_one(database_connection)
     .await

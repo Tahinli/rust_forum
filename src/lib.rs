@@ -52,7 +52,8 @@ impl Default for DatabaseConfig {
 pub struct ServerConfig {
     pub address: String,
     pub otp_time_limit: usize,
-    pub login_token_time_limit: usize,
+    pub login_token_expiration_time_limit: usize,
+    pub login_token_refresh_time_limit: usize,
     pub concurrency_limit: usize,
 }
 
@@ -65,7 +66,10 @@ impl Default for ServerConfig {
             Self {
                 address: server_configs.pop_front().unwrap().parse().unwrap(),
                 otp_time_limit: value_or_max(server_configs.pop_front().unwrap()),
-                login_token_time_limit: value_or_max(server_configs.pop_front().unwrap()),
+                login_token_expiration_time_limit: value_or_max(
+                    server_configs.pop_front().unwrap(),
+                ),
+                login_token_refresh_time_limit: value_or_max(server_configs.pop_front().unwrap()),
                 concurrency_limit: value_or_max(server_configs.pop_front().unwrap()),
             }
         } else {
