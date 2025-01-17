@@ -3,13 +3,9 @@ pub mod comment_interaction;
 pub mod contact;
 pub mod interaction;
 pub mod login;
-pub mod permission;
 pub mod post;
 pub mod post_interaction;
 pub mod role;
-pub mod role_permission;
-pub mod routing;
-pub mod routing_permission;
 pub mod user;
 pub mod user_contact;
 
@@ -51,24 +47,12 @@ pub async fn route(concurrency_limit: &usize, State(app_state): State<AppState>)
             comment_interaction::route(axum::extract::State(app_state.clone())),
         )
         .nest(
-            "/role_permissions",
-            role_permission::route(axum::extract::State(app_state.clone())),
-        )
-        .nest(
             "/contacts",
             contact::route(axum::extract::State(app_state.clone())),
         )
         .nest(
             "/user_contacts",
             user_contact::route(axum::extract::State(app_state.clone())),
-        )
-        .nest(
-            "/routings",
-            routing::route(axum::extract::State(app_state.clone())),
-        )
-        .nest(
-            "/routing_permissions",
-            routing_permission::route(axum::extract::State(app_state.clone())),
         )
         .layer(CorsLayer::permissive())
         .layer(ConcurrencyLimitLayer::new(*concurrency_limit))
