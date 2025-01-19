@@ -1,6 +1,6 @@
 -- Add up migration script here
 CREATE TABLE IF NOT EXISTS "user"(
-    id BIGSERIAL PRIMARY KEY NOT NULL UNIQUE,
+    user_id BIGSERIAL PRIMARY KEY NOT NULL UNIQUE,
     name VARCHAR(256) NOT NULL,
     surname VARCHAR(256) NOT NULL,
     gender boolean NOT NULL,

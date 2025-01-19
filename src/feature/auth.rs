@@ -7,6 +7,8 @@ use crate::{
     ONE_TIME_PASSWORDS,
 };
 
+use super::user::User;
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct OneTimePassword {
     pub user_id: i64,
@@ -18,19 +20,15 @@ impl OneTimePassword {
         RwLock::new(vec![])
     }
 
-    pub async fn new(
-        user_id: &i64,
-        user_name: &String,
-        user_email: &String,
-    ) -> Result<(), ForumMailError> {
+    pub async fn new(user: &User, user_email: &String) -> Result<(), ForumMailError> {
         let one_time_password = "123".to_owned();
         let new_self = Self {
-            user_id: *user_id,
+            user_id: user.user_id,
             one_time_password,
         };
 
         let mail_template =
-            MailTemplate::OneTimePassword(MailFieldsOneTimePassword::new(user_name, &new_self));
+            MailTemplate::OneTimePassword(MailFieldsOneTimePassword::new(&user.name, &new_self));
 
         mail_template.send_mail(user_email).await?;
 

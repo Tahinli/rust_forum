@@ -3,6 +3,7 @@ pub mod comment_interaction;
 pub mod contact;
 pub mod interaction;
 pub mod login;
+pub mod middleware;
 pub mod post;
 pub mod post_interaction;
 pub mod role;
@@ -18,6 +19,10 @@ use crate::{database, AppState};
 pub async fn route(concurrency_limit: &usize, State(app_state): State<AppState>) -> Router {
     Router::new()
         .route("/", get(alive))
+        .route_layer(axum::middleware::from_fn_with_state(
+            app_state.clone(),
+            middleware::pass,
+        ))
         .nest(
             "/roles",
             role::route(axum::extract::State(app_state.clone())),
@@ -59,7 +64,7 @@ pub async fn route(concurrency_limit: &usize, State(app_state): State<AppState>)
         .with_state(app_state)
 }
 
-async fn alive(State(app_state): State<AppState>) -> impl IntoResponse {
+pub async fn alive(State(app_state): State<AppState>) -> impl IntoResponse {
     match database::is_alive(&app_state.database_connection).await {
         true => StatusCode::OK,
         false => StatusCode::SERVICE_UNAVAILABLE,

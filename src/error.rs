@@ -51,3 +51,22 @@ impl std::error::Error for ForumMailError {
         self.source()
     }
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ForumAuthError {
+    TokenRefreshTimeOver,
+}
+
+impl std::fmt::Display for ForumAuthError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ForumAuthError::TokenRefreshTimeOver => write!(f, "Token Refresh Time is Over"),
+        }
+    }
+}
+
+impl std::error::Error for ForumAuthError {
+    fn cause(&self) -> Option<&dyn std::error::Error> {
+        self.source()
+    }
+}

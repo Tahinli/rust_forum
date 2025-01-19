@@ -13,8 +13,8 @@ pub async fn create(
     sqlx::query_as!(
         User,
         r#"
-            INSERT INTO "user"(name, surname, gender, birth_date, role_id) 
-            VALUES ($1, $2, $3, $4, $5) 
+            INSERT INTO "user"(name, surname, gender, birth_date, role_id)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *
         "#,
         name,
@@ -31,7 +31,7 @@ pub async fn read(id: &i64, database_connection: &Pool<Postgres>) -> Result<User
     sqlx::query_as!(
         User,
         r#"
-            SELECT * FROM "user" WHERE "id" = $1
+            SELECT * FROM "user" WHERE "user_id" = $1
         "#,
         id
     )
@@ -50,7 +50,7 @@ pub async fn update(
 ) -> Result<User, sqlx::Error> {
     sqlx::query_as!(User,
     r#"
-        UPDATE "user" SET "name" = $2, "surname" = $3, "gender" = $4, "birth_date" = $5, "role_id" = $6 WHERE "id" = $1
+        UPDATE "user" SET "name" = $2, "surname" = $3, "gender" = $4, "birth_date" = $5, "role_id" = $6 WHERE "user_id" = $1
         RETURNING *
     "#, id, name, surname, gender, birth_date, role_id).fetch_one(database_connection).await
 }
@@ -59,7 +59,7 @@ pub async fn delete(id: &i64, database_connection: &Pool<Postgres>) -> Result<Us
     sqlx::query_as!(
         User,
         r#"
-        DELETE FROM "user" WHERE "id" = $1
+        DELETE FROM "user" WHERE "user_id" = $1
         RETURNING *
     "#,
         id
@@ -157,13 +157,13 @@ pub async fn read_all_for_gender(
 pub async fn read_all_id(database_connection: &Pool<Postgres>) -> Result<Vec<i64>, sqlx::Error> {
     Ok(sqlx::query!(
         r#"
-            SELECT "id" FROM "user"
+            SELECT "user_id" FROM "user"
         "#,
     )
     .fetch_all(database_connection)
     .await?
     .iter()
-    .map(|record| record.id)
+    .map(|record| record.user_id)
     .collect::<Vec<i64>>())
 }
 
@@ -173,14 +173,14 @@ pub async fn read_all_id_for_name(
 ) -> Result<Vec<i64>, sqlx::Error> {
     Ok(sqlx::query!(
         r#"
-            SELECT "id" FROM "user" WHERE "name" = $1
+            SELECT "user_id" FROM "user" WHERE "name" = $1
         "#,
         name
     )
     .fetch_all(database_connection)
     .await?
     .iter()
-    .map(|record| record.id)
+    .map(|record| record.user_id)
     .collect::<Vec<i64>>())
 }
 
@@ -190,14 +190,14 @@ pub async fn read_all_id_for_surname(
 ) -> Result<Vec<i64>, sqlx::Error> {
     Ok(sqlx::query!(
         r#"
-            SELECT "id" FROM "user" WHERE "surname" = $1
+            SELECT "user_id" FROM "user" WHERE "surname" = $1
         "#,
         surname
     )
     .fetch_all(database_connection)
     .await?
     .iter()
-    .map(|record| record.id)
+    .map(|record| record.user_id)
     .collect::<Vec<i64>>())
 }
 
@@ -207,14 +207,14 @@ pub async fn read_all_id_for_birth_date(
 ) -> Result<Vec<i64>, sqlx::Error> {
     Ok(sqlx::query!(
         r#"
-            SELECT "id" FROM "user" WHERE "birth_date" = $1
+            SELECT "user_id" FROM "user" WHERE "birth_date" = $1
         "#,
         birth_date
     )
     .fetch_all(database_connection)
     .await?
     .iter()
-    .map(|record| record.id)
+    .map(|record| record.user_id)
     .collect::<Vec<i64>>())
 }
 
@@ -224,14 +224,14 @@ pub async fn read_all_id_for_role(
 ) -> Result<Vec<i64>, sqlx::Error> {
     Ok(sqlx::query!(
         r#"
-            SELECT "id" FROM "user" WHERE "role_id" = $1
+            SELECT "user_id" FROM "user" WHERE "role_id" = $1
         "#,
         role_id
     )
     .fetch_all(database_connection)
     .await?
     .iter()
-    .map(|record| record.id)
+    .map(|record| record.user_id)
     .collect::<Vec<i64>>())
 }
 
@@ -241,21 +241,21 @@ pub async fn read_all_id_for_gender(
 ) -> Result<Vec<i64>, sqlx::Error> {
     Ok(sqlx::query!(
         r#"
-            SELECT "id" FROM "user" WHERE "gender" = $1
+            SELECT "user_id" FROM "user" WHERE "gender" = $1
         "#,
         gender
     )
     .fetch_all(database_connection)
     .await?
     .iter()
-    .map(|record| record.id)
+    .map(|record| record.user_id)
     .collect::<Vec<i64>>())
 }
 
 pub async fn count_all(database_connection: &Pool<Postgres>) -> Result<u64, sqlx::Error> {
     sqlx::query!(
         r#"
-            SELECT COUNT(id) FROM "user"
+            SELECT COUNT(user_id) FROM "user"
         "#,
     )
     .fetch_one(database_connection)
@@ -272,7 +272,7 @@ pub async fn count_all_for_name(
 ) -> Result<u64, sqlx::Error> {
     sqlx::query!(
         r#"
-            SELECT COUNT(id) FROM "user" WHERE "name" = $1
+            SELECT COUNT(user_id) FROM "user" WHERE "name" = $1
         "#,
         name
     )
@@ -290,7 +290,7 @@ pub async fn count_all_for_surname(
 ) -> Result<u64, sqlx::Error> {
     sqlx::query!(
         r#"
-            SELECT COUNT(id) FROM "user" WHERE "surname" = $1
+            SELECT COUNT(user_id) FROM "user" WHERE "surname" = $1
         "#,
         surname
     )
@@ -308,7 +308,7 @@ pub async fn count_all_for_birth_date(
 ) -> Result<u64, sqlx::Error> {
     sqlx::query!(
         r#"
-            SELECT COUNT(id) FROM "user" WHERE "birth_date" = $1
+            SELECT COUNT(user_id) FROM "user" WHERE "birth_date" = $1
         "#,
         birth_date
     )
@@ -326,7 +326,7 @@ pub async fn count_all_for_role(
 ) -> Result<u64, sqlx::Error> {
     sqlx::query!(
         r#"
-            SELECT COUNT(id) FROM "user" WHERE "role_id" = $1
+            SELECT COUNT(user_id) FROM "user" WHERE "role_id" = $1
         "#,
         role_id
     )
@@ -344,7 +344,7 @@ pub async fn count_all_for_gender(
 ) -> Result<u64, sqlx::Error> {
     sqlx::query!(
         r#"
-            SELECT COUNT(id) FROM "user" WHERE "gender" = $1
+            SELECT COUNT(user_id) FROM "user" WHERE "gender" = $1
         "#,
         gender
     )

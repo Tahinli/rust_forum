@@ -13,7 +13,7 @@ pub struct Contact {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
-    pub id: i64,
+    pub user_id: i64,
     pub name: String,
     pub surname: String,
     pub gender: bool,
@@ -33,12 +33,15 @@ impl User {
         user::create(name, surname, gender, birth_date, database_connection).await
     }
 
-    pub async fn read(id: &i64, database_connection: &Pool<Postgres>) -> Result<User, sqlx::Error> {
-        user::read(id, database_connection).await
+    pub async fn read(
+        user_id: &i64,
+        database_connection: &Pool<Postgres>,
+    ) -> Result<User, sqlx::Error> {
+        user::read(user_id, database_connection).await
     }
 
     pub async fn update(
-        id: &i64,
+        user_id: &i64,
         name: &String,
         surname: &String,
         gender: &bool,
@@ -47,7 +50,7 @@ impl User {
         database_connection: &Pool<Postgres>,
     ) -> Result<User, sqlx::Error> {
         user::update(
-            id,
+            user_id,
             name,
             surname,
             gender,
@@ -59,10 +62,10 @@ impl User {
     }
 
     pub async fn delete(
-        id: &i64,
+        user_id: &i64,
         database_connection: &Pool<Postgres>,
     ) -> Result<User, sqlx::Error> {
-        user::delete(id, database_connection).await
+        user::delete(user_id, database_connection).await
     }
 
     pub async fn read_all(database_connection: &Pool<Postgres>) -> Result<Vec<User>, sqlx::Error> {
@@ -182,5 +185,63 @@ impl User {
         database_connection: &Pool<Postgres>,
     ) -> Result<u64, sqlx::Error> {
         user::count_all_for_gender(gender, database_connection).await
+    }
+
+    pub async fn is_builder(user: &User) -> bool {
+        if user.role_id == 0 {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub async fn is_admin(user: &User) -> bool {
+        if user.role_id == 1 {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub async fn is_banned(user: &User) -> bool {
+        if user.role_id == -1 {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub async fn is_builder_or_admin(user: &User) -> bool {
+        if user.role_id == 0 || user.role_id == 1 {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub async fn is_self(user: &User, target_user: &User) -> bool {
+        if user.user_id == target_user.user_id {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub async fn is_higher(user: &User, target_user: &User) -> bool {
+        if user.user_id >= 0 {
+            if user.user_id < target_user.user_id {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    pub async fn is_higher_or_self(user: &User, target_user: &User) -> bool {
+        if User::is_self(user, target_user).await {
+            true
+        } else {
+            User::is_higher(user, target_user).await
+        }
     }
 }
