@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, State},
+    extract::Path,
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, patch, post},
@@ -8,7 +8,7 @@ use axum::{
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{feature::post_interaction::PostInteraction, AppState};
+use crate::feature::post_interaction::PostInteraction;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreatePostInteraction {
@@ -25,25 +25,20 @@ struct UpdatePostInteraction {
     pub user_id: i64,
 }
 
-pub fn route(State(app_state): State<AppState>) -> Router<AppState> {
+pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
         .route("/:interaction_time", get(read))
         .route("/", patch(update))
         .route("/:interaction_time", delete(delete_))
         .route("/posts/:post_creation_time", get(read_all_for_post))
-        .with_state(app_state)
 }
 
-async fn create(
-    State(app_state): State<AppState>,
-    Json(create_post_interaction): Json<CreatePostInteraction>,
-) -> impl IntoResponse {
+async fn create(Json(create_post_interaction): Json<CreatePostInteraction>) -> impl IntoResponse {
     match PostInteraction::create(
         &create_post_interaction.post_creation_time,
         &create_post_interaction.user_id,
         &create_post_interaction.interaction_id,
-        &app_state.database_connection,
     )
     .await
     {
@@ -58,11 +53,8 @@ async fn create(
     }
 }
 
-async fn read(
-    State(app_state): State<AppState>,
-    Path(interaction_time): Path<DateTime<Utc>>,
-) -> impl IntoResponse {
-    match PostInteraction::read(&interaction_time, &app_state.database_connection).await {
+async fn read(Path(interaction_time): Path<DateTime<Utc>>) -> impl IntoResponse {
+    match PostInteraction::read(&interaction_time).await {
         Ok(post_interaction) => (StatusCode::OK, Json(serde_json::json!(post_interaction))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -71,14 +63,10 @@ async fn read(
     }
 }
 
-async fn update(
-    State(app_state): State<AppState>,
-    Json(update_post_interaction): Json<UpdatePostInteraction>,
-) -> impl IntoResponse {
+async fn update(Json(update_post_interaction): Json<UpdatePostInteraction>) -> impl IntoResponse {
     match PostInteraction::update(
         &update_post_interaction.interaction_time,
         &update_post_interaction.interaction_id,
-        &app_state.database_connection,
     )
     .await
     {
@@ -93,11 +81,8 @@ async fn update(
     }
 }
 
-async fn delete_(
-    State(app_state): State<AppState>,
-    Path(interaction_time): Path<DateTime<Utc>>,
-) -> impl IntoResponse {
-    match PostInteraction::delete(&interaction_time, &app_state.database_connection).await {
+async fn delete_(Path(interaction_time): Path<DateTime<Utc>>) -> impl IntoResponse {
+    match PostInteraction::delete(&interaction_time).await {
         Ok(post_interaction) => (
             StatusCode::NO_CONTENT,
             Json(serde_json::json!(post_interaction)),
@@ -109,13 +94,8 @@ async fn delete_(
     }
 }
 
-async fn read_all_for_post(
-    State(app_state): State<AppState>,
-    Path(post_creation_time): Path<DateTime<Utc>>,
-) -> impl IntoResponse {
-    match PostInteraction::read_all_for_post(&post_creation_time, &app_state.database_connection)
-        .await
-    {
+async fn read_all_for_post(Path(post_creation_time): Path<DateTime<Utc>>) -> impl IntoResponse {
+    match PostInteraction::read_all_for_post(&post_creation_time).await {
         Ok(post_interactions) => (StatusCode::OK, Json(serde_json::json!(post_interactions))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,

@@ -1,16 +1,11 @@
 use tokio::net::TcpListener;
 
-use crate::{AppState, SERVER_CONFIG};
+use crate::SERVER_CONFIG;
 
-pub async fn start_server(app_state: AppState) {
-    let server_config = &SERVER_CONFIG;
+pub async fn start_server() {
+    let router = crate::routing::route(&SERVER_CONFIG.concurrency_limit).await;
+    let listener = TcpListener::bind(&SERVER_CONFIG.address).await.unwrap();
 
-    let router = crate::routing::route(
-        &server_config.concurrency_limit,
-        axum::extract::State(app_state),
-    )
-    .await;
-    let listener = TcpListener::bind(&server_config.address).await.unwrap();
-    println!("\n\thttp://{}", server_config.address);
+    println!("\n\thttp://{}", &SERVER_CONFIG.address);
     axum::serve(listener, router).await.unwrap()
 }

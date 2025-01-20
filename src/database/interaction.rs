@@ -1,28 +1,22 @@
-use sqlx::{Pool, Postgres};
-
 use crate::feature::interaction::Interaction;
 
-pub async fn create(
-    name: &String,
-    database_connection: &Pool<Postgres>,
-) -> Result<Interaction, sqlx::Error> {
+use super::DATABASE_CONNECTIONS;
+
+pub async fn create(name: &String) -> Result<Interaction, sqlx::Error> {
     sqlx::query_as!(
         Interaction,
         r#"
-            INSERT INTO "interaction"(name) 
-            VALUES ($1) 
+            INSERT INTO "interaction"(name)
+            VALUES ($1)
             RETURNING *
         "#,
         name,
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn read(
-    id: &i64,
-    database_connection: &Pool<Postgres>,
-) -> Result<Interaction, sqlx::Error> {
+pub async fn read(id: &i64) -> Result<Interaction, sqlx::Error> {
     sqlx::query_as!(
         Interaction,
         r#"
@@ -30,15 +24,11 @@ pub async fn read(
         "#,
         id
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn update(
-    id: &i64,
-    name: &String,
-    database_connection: &Pool<Postgres>,
-) -> Result<Interaction, sqlx::Error> {
+pub async fn update(id: &i64, name: &String) -> Result<Interaction, sqlx::Error> {
     sqlx::query_as!(
         Interaction,
         r#"
@@ -48,14 +38,11 @@ pub async fn update(
         id,
         name
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn delete(
-    id: &i64,
-    database_connection: &Pool<Postgres>,
-) -> Result<Interaction, sqlx::Error> {
+pub async fn delete(id: &i64) -> Result<Interaction, sqlx::Error> {
     sqlx::query_as!(
         Interaction,
         r#"
@@ -64,19 +51,17 @@ pub async fn delete(
     "#,
         id
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn read_all(
-    database_connection: &Pool<Postgres>,
-) -> Result<Vec<Interaction>, sqlx::Error> {
+pub async fn read_all() -> Result<Vec<Interaction>, sqlx::Error> {
     sqlx::query_as!(
         Interaction,
         r#"
             SELECT * FROM "interaction"
         "#,
     )
-    .fetch_all(database_connection)
+    .fetch_all(&*DATABASE_CONNECTIONS)
     .await
 }

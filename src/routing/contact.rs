@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, State},
+    extract::Path,
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, patch, post},
@@ -7,7 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{feature::contact::Contact, AppState};
+use crate::feature::contact::Contact;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateContact {
@@ -20,21 +20,17 @@ struct UpdateContact {
     name: String,
 }
 
-pub fn route(State(app_state): State<AppState>) -> Router<AppState> {
+pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
         .route("/:id", get(read))
         .route("/", patch(update))
         .route("/:id", delete(delete_))
         .route("/", get(read_all))
-        .with_state(app_state)
 }
 
-async fn create(
-    State(app_state): State<AppState>,
-    Json(create_contact): Json<CreateContact>,
-) -> impl IntoResponse {
-    match Contact::create(&create_contact.name, &app_state.database_connection).await {
+async fn create(Json(create_contact): Json<CreateContact>) -> impl IntoResponse {
+    match Contact::create(&create_contact.name).await {
         Ok(contact) => (StatusCode::CREATED, Json(serde_json::json!(contact))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -43,8 +39,8 @@ async fn create(
     }
 }
 
-async fn read(State(app_state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
-    match Contact::read(&id, &app_state.database_connection).await {
+async fn read(Path(id): Path<i64>) -> impl IntoResponse {
+    match Contact::read(&id).await {
         Ok(contact) => (StatusCode::OK, Json(serde_json::json!(contact))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -53,17 +49,8 @@ async fn read(State(app_state): State<AppState>, Path(id): Path<i64>) -> impl In
     }
 }
 
-async fn update(
-    State(app_state): State<AppState>,
-    Json(update_contact): Json<UpdateContact>,
-) -> impl IntoResponse {
-    match Contact::update(
-        &update_contact.id,
-        &update_contact.name,
-        &app_state.database_connection,
-    )
-    .await
-    {
+async fn update(Json(update_contact): Json<UpdateContact>) -> impl IntoResponse {
+    match Contact::update(&update_contact.id, &update_contact.name).await {
         Ok(contact) => (StatusCode::ACCEPTED, Json(serde_json::json!(contact))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -72,8 +59,8 @@ async fn update(
     }
 }
 
-async fn delete_(State(app_state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
-    match Contact::delete(&id, &app_state.database_connection).await {
+async fn delete_(Path(id): Path<i64>) -> impl IntoResponse {
+    match Contact::delete(&id).await {
         Ok(contact) => (StatusCode::NO_CONTENT, Json(serde_json::json!(contact))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -82,8 +69,8 @@ async fn delete_(State(app_state): State<AppState>, Path(id): Path<i64>) -> impl
     }
 }
 
-async fn read_all(State(app_state): State<AppState>) -> impl IntoResponse {
-    match Contact::read_all(&app_state.database_connection).await {
+async fn read_all() -> impl IntoResponse {
+    match Contact::read_all().await {
         Ok(contacts) => (StatusCode::OK, Json(serde_json::json!(contacts))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,

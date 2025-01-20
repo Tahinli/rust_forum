@@ -1,6 +1,5 @@
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{Pool, Postgres};
 
 use crate::database::user;
 
@@ -28,16 +27,12 @@ impl User {
         surname: &String,
         gender: &bool,
         birth_date: &NaiveDate,
-        database_connection: &Pool<Postgres>,
     ) -> Result<User, sqlx::Error> {
-        user::create(name, surname, gender, birth_date, database_connection).await
+        user::create(name, surname, gender, birth_date).await
     }
 
-    pub async fn read(
-        user_id: &i64,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<User, sqlx::Error> {
-        user::read(user_id, database_connection).await
+    pub async fn read(user_id: &i64) -> Result<User, sqlx::Error> {
+        user::read(user_id).await
     }
 
     pub async fn update(
@@ -47,144 +42,86 @@ impl User {
         gender: &bool,
         birth_date: &NaiveDate,
         role_id: &i64,
-        database_connection: &Pool<Postgres>,
     ) -> Result<User, sqlx::Error> {
-        user::update(
-            user_id,
-            name,
-            surname,
-            gender,
-            birth_date,
-            role_id,
-            database_connection,
-        )
-        .await
+        user::update(user_id, name, surname, gender, birth_date, role_id).await
     }
 
-    pub async fn delete(
-        user_id: &i64,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<User, sqlx::Error> {
-        user::delete(user_id, database_connection).await
+    pub async fn delete(user_id: &i64) -> Result<User, sqlx::Error> {
+        user::delete(user_id).await
     }
 
-    pub async fn read_all(database_connection: &Pool<Postgres>) -> Result<Vec<User>, sqlx::Error> {
-        user::read_all(database_connection).await
+    pub async fn read_all() -> Result<Vec<User>, sqlx::Error> {
+        user::read_all().await
     }
 
-    pub async fn read_all_for_name(
-        name: &String,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Vec<User>, sqlx::Error> {
-        user::read_all_for_name(name, database_connection).await
+    pub async fn read_all_for_name(name: &String) -> Result<Vec<User>, sqlx::Error> {
+        user::read_all_for_name(name).await
     }
 
-    pub async fn read_all_for_surname(
-        surname: &String,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Vec<User>, sqlx::Error> {
-        user::read_all_for_surname(surname, database_connection).await
+    pub async fn read_all_for_surname(surname: &String) -> Result<Vec<User>, sqlx::Error> {
+        user::read_all_for_surname(surname).await
     }
 
-    pub async fn read_all_for_birth_date(
-        birth_date: &NaiveDate,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Vec<User>, sqlx::Error> {
-        user::read_all_for_birth_date(birth_date, database_connection).await
+    pub async fn read_all_for_birth_date(birth_date: &NaiveDate) -> Result<Vec<User>, sqlx::Error> {
+        user::read_all_for_birth_date(birth_date).await
     }
 
-    pub async fn read_all_for_role(
-        role_id: &i64,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Vec<User>, sqlx::Error> {
-        user::read_all_for_role(role_id, database_connection).await
+    pub async fn read_all_for_role(role_id: &i64) -> Result<Vec<User>, sqlx::Error> {
+        user::read_all_for_role(role_id).await
     }
 
-    pub async fn read_all_for_gender(
-        gender: &bool,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Vec<User>, sqlx::Error> {
-        user::read_all_for_gender(gender, database_connection).await
+    pub async fn read_all_for_gender(gender: &bool) -> Result<Vec<User>, sqlx::Error> {
+        user::read_all_for_gender(gender).await
     }
 
-    pub async fn read_all_id(
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Vec<i64>, sqlx::Error> {
-        user::read_all_id(database_connection).await
+    pub async fn read_all_id() -> Result<Vec<i64>, sqlx::Error> {
+        user::read_all_id().await
     }
 
-    pub async fn read_all_id_for_name(
-        name: &String,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Vec<i64>, sqlx::Error> {
-        user::read_all_id_for_name(name, database_connection).await
+    pub async fn read_all_id_for_name(name: &String) -> Result<Vec<i64>, sqlx::Error> {
+        user::read_all_id_for_name(name).await
     }
 
-    pub async fn read_all_id_for_surname(
-        surname: &String,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Vec<i64>, sqlx::Error> {
-        user::read_all_id_for_surname(surname, database_connection).await
+    pub async fn read_all_id_for_surname(surname: &String) -> Result<Vec<i64>, sqlx::Error> {
+        user::read_all_id_for_surname(surname).await
     }
 
     pub async fn read_all_id_for_birth_date(
         birth_date: &NaiveDate,
-        database_connection: &Pool<Postgres>,
     ) -> Result<Vec<i64>, sqlx::Error> {
-        user::read_all_id_for_birth_date(birth_date, database_connection).await
+        user::read_all_id_for_birth_date(birth_date).await
     }
 
-    pub async fn read_all_id_for_role(
-        role_id: &i64,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Vec<i64>, sqlx::Error> {
-        user::read_all_id_for_role(role_id, database_connection).await
+    pub async fn read_all_id_for_role(role_id: &i64) -> Result<Vec<i64>, sqlx::Error> {
+        user::read_all_id_for_role(role_id).await
     }
 
-    pub async fn read_all_id_for_gender(
-        gender: &bool,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Vec<i64>, sqlx::Error> {
-        user::read_all_id_for_gender(gender, database_connection).await
+    pub async fn read_all_id_for_gender(gender: &bool) -> Result<Vec<i64>, sqlx::Error> {
+        user::read_all_id_for_gender(gender).await
     }
 
-    pub async fn count_all(database_connection: &Pool<Postgres>) -> Result<u64, sqlx::Error> {
-        user::count_all(database_connection).await
+    pub async fn count_all() -> Result<u64, sqlx::Error> {
+        user::count_all().await
     }
 
-    pub async fn count_all_for_name(
-        name: &String,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<u64, sqlx::Error> {
-        user::count_all_for_name(name, database_connection).await
+    pub async fn count_all_for_name(name: &String) -> Result<u64, sqlx::Error> {
+        user::count_all_for_name(name).await
     }
 
-    pub async fn count_all_for_surname(
-        surname: &String,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<u64, sqlx::Error> {
-        user::count_all_for_surname(surname, database_connection).await
+    pub async fn count_all_for_surname(surname: &String) -> Result<u64, sqlx::Error> {
+        user::count_all_for_surname(surname).await
     }
 
-    pub async fn count_all_for_birth_date(
-        birth_date: &NaiveDate,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<u64, sqlx::Error> {
-        user::count_all_for_birth_date(birth_date, database_connection).await
+    pub async fn count_all_for_birth_date(birth_date: &NaiveDate) -> Result<u64, sqlx::Error> {
+        user::count_all_for_birth_date(birth_date).await
     }
 
-    pub async fn count_all_for_role(
-        role_id: &i64,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<u64, sqlx::Error> {
-        user::count_all_for_role(role_id, database_connection).await
+    pub async fn count_all_for_role(role_id: &i64) -> Result<u64, sqlx::Error> {
+        user::count_all_for_role(role_id).await
     }
 
-    pub async fn count_all_for_gender(
-        gender: &bool,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<u64, sqlx::Error> {
-        user::count_all_for_gender(gender, database_connection).await
+    pub async fn count_all_for_gender(gender: &bool) -> Result<u64, sqlx::Error> {
+        user::count_all_for_gender(gender).await
     }
 
     pub async fn is_builder(user: &User) -> bool {

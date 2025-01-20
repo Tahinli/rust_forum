@@ -8,14 +8,10 @@ pub mod utils;
 
 use std::sync::LazyLock;
 
-use feature::auth::OneTimePassword;
 use sqlx::{Pool, Postgres};
-use tokio::sync::RwLock;
 use utils::naive_toml_parser;
 
 pub static SERVER_CONFIG: LazyLock<ServerConfig> = LazyLock::new(ServerConfig::default);
-pub static ONE_TIME_PASSWORDS: LazyLock<RwLock<Vec<OneTimePassword>>> =
-    LazyLock::new(OneTimePassword::init);
 
 const DATABASE_CONFIG_FILE_LOCATION: &str = "./configs/database_config.toml";
 const SERVER_CONFIG_FILE_LOCATION: &str = "./configs/server_config.toml";

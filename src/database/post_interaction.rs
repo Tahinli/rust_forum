@@ -1,33 +1,30 @@
 use chrono::{DateTime, Utc};
-use sqlx::{Pool, Postgres};
 
 use crate::feature::post_interaction::PostInteraction;
+
+use super::DATABASE_CONNECTIONS;
 
 pub async fn create(
     post_creation_time: &DateTime<Utc>,
     user_id: &i64,
     interaction_id: &i64,
-    database_connection: &Pool<Postgres>,
 ) -> Result<PostInteraction, sqlx::Error> {
     sqlx::query_as!(
         PostInteraction,
         r#"
-            INSERT INTO "post_interaction"(post_creation_time, user_id, interaction_id) 
-            VALUES ($1, $2, $3) 
+            INSERT INTO "post_interaction"(post_creation_time, user_id, interaction_id)
+            VALUES ($1, $2, $3)
             RETURNING *
         "#,
         post_creation_time,
         user_id,
         interaction_id,
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn read(
-    interaction_time: &DateTime<Utc>,
-    database_connection: &Pool<Postgres>,
-) -> Result<PostInteraction, sqlx::Error> {
+pub async fn read(interaction_time: &DateTime<Utc>) -> Result<PostInteraction, sqlx::Error> {
     sqlx::query_as!(
         PostInteraction,
         r#"
@@ -35,14 +32,13 @@ pub async fn read(
         "#,
         interaction_time
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
 pub async fn update(
     interaction_time: &DateTime<Utc>,
     interaction_id: &i64,
-    database_connection: &Pool<Postgres>,
 ) -> Result<PostInteraction, sqlx::Error> {
     sqlx::query_as!(
         PostInteraction,
@@ -53,14 +49,11 @@ pub async fn update(
         interaction_time,
         interaction_id,
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn delete(
-    interaction_time: &DateTime<Utc>,
-    database_connection: &Pool<Postgres>,
-) -> Result<PostInteraction, sqlx::Error> {
+pub async fn delete(interaction_time: &DateTime<Utc>) -> Result<PostInteraction, sqlx::Error> {
     sqlx::query_as!(
         PostInteraction,
         r#"
@@ -69,13 +62,12 @@ pub async fn delete(
     "#,
         interaction_time
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
 pub async fn read_all_for_post(
     post_creation_time: &DateTime<Utc>,
-    database_connection: &Pool<Postgres>,
 ) -> Result<Vec<PostInteraction>, sqlx::Error> {
     sqlx::query_as!(
         PostInteraction,
@@ -84,6 +76,6 @@ pub async fn read_all_for_post(
         "#,
         post_creation_time
     )
-    .fetch_all(database_connection)
+    .fetch_all(&*DATABASE_CONNECTIONS)
     .await
 }

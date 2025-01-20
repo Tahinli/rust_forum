@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{Pool, Postgres};
 
 use crate::database::role;
 
@@ -10,33 +9,23 @@ pub struct Role {
 }
 
 impl Role {
-    pub async fn create(
-        name: &String,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Role, sqlx::Error> {
-        role::create(name, database_connection).await
+    pub async fn create(name: &String) -> Result<Role, sqlx::Error> {
+        role::create(name).await
     }
 
-    pub async fn read(id: &i64, database_connection: &Pool<Postgres>) -> Result<Role, sqlx::Error> {
-        role::read(id, database_connection).await
+    pub async fn read(id: &i64) -> Result<Role, sqlx::Error> {
+        role::read(id).await
     }
 
-    pub async fn update(
-        id: &i64,
-        name: &String,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Role, sqlx::Error> {
-        role::update(id, name, database_connection).await
+    pub async fn update(id: &i64, name: &String) -> Result<Role, sqlx::Error> {
+        role::update(id, name).await
     }
 
-    pub async fn delete(
-        id: &i64,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Role, sqlx::Error> {
-        role::delete(id, database_connection).await
+    pub async fn delete(id: &i64) -> Result<Role, sqlx::Error> {
+        role::delete(id).await
     }
 
-    pub async fn read_all(database_connection: &Pool<Postgres>) -> Result<Vec<Role>, sqlx::Error> {
-        role::read_all(database_connection).await
+    pub async fn read_all() -> Result<Vec<Role>, sqlx::Error> {
+        role::read_all().await
     }
 }

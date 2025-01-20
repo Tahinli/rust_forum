@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, State},
+    extract::Path,
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, patch, post},
@@ -7,7 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{feature::interaction::Interaction, AppState};
+use crate::feature::interaction::Interaction;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateInteraction {
@@ -20,21 +20,17 @@ struct UpdateInteraction {
     name: String,
 }
 
-pub fn route(State(app_state): State<AppState>) -> Router<AppState> {
+pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
         .route("/:id", get(read))
         .route("/", patch(update))
         .route("/:id", delete(delete_))
         .route("/", get(read_all))
-        .with_state(app_state)
 }
 
-async fn create(
-    State(app_state): State<AppState>,
-    Json(create_interaction): Json<CreateInteraction>,
-) -> impl IntoResponse {
-    match Interaction::create(&create_interaction.name, &app_state.database_connection).await {
+async fn create(Json(create_interaction): Json<CreateInteraction>) -> impl IntoResponse {
+    match Interaction::create(&create_interaction.name).await {
         Ok(interaction) => (StatusCode::CREATED, Json(serde_json::json!(interaction))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -43,8 +39,8 @@ async fn create(
     }
 }
 
-async fn read(State(app_state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
-    match Interaction::read(&id, &app_state.database_connection).await {
+async fn read(Path(id): Path<i64>) -> impl IntoResponse {
+    match Interaction::read(&id).await {
         Ok(interaction) => (StatusCode::OK, Json(serde_json::json!(interaction))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -53,17 +49,8 @@ async fn read(State(app_state): State<AppState>, Path(id): Path<i64>) -> impl In
     }
 }
 
-async fn update(
-    State(app_state): State<AppState>,
-    Json(update_interaction): Json<UpdateInteraction>,
-) -> impl IntoResponse {
-    match Interaction::update(
-        &update_interaction.id,
-        &update_interaction.name,
-        &app_state.database_connection,
-    )
-    .await
-    {
+async fn update(Json(update_interaction): Json<UpdateInteraction>) -> impl IntoResponse {
+    match Interaction::update(&update_interaction.id, &update_interaction.name).await {
         Ok(interaction) => (StatusCode::ACCEPTED, Json(serde_json::json!(interaction))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -72,8 +59,8 @@ async fn update(
     }
 }
 
-async fn delete_(State(app_state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
-    match Interaction::delete(&id, &app_state.database_connection).await {
+async fn delete_(Path(id): Path<i64>) -> impl IntoResponse {
+    match Interaction::delete(&id).await {
         Ok(interaction) => (StatusCode::NO_CONTENT, Json(serde_json::json!(interaction))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -82,8 +69,8 @@ async fn delete_(State(app_state): State<AppState>, Path(id): Path<i64>) -> impl
     }
 }
 
-async fn read_all(State(app_state): State<AppState>) -> impl IntoResponse {
-    match Interaction::read_all(&app_state.database_connection).await {
+async fn read_all() -> impl IntoResponse {
+    match Interaction::read_all().await {
         Ok(interactions) => (StatusCode::OK, Json(serde_json::json!(interactions))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,

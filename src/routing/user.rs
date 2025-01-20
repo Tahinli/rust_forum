@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, State},
+    extract::Path,
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, patch, post},
@@ -8,7 +8,7 @@ use axum::{
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-use crate::{feature::user::User, AppState};
+use crate::feature::user::User;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateUser {
@@ -28,7 +28,7 @@ struct UpdateUser {
     role_id: i64,
 }
 
-pub fn route(State(app_state): State<AppState>) -> Router<AppState> {
+pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
         .route("/:id", get(read))
@@ -58,19 +58,14 @@ pub fn route(State(app_state): State<AppState>) -> Router<AppState> {
         )
         .route("/count/roles/:role", get(count_all_for_role))
         .route("/count/genders/:gender", get(count_all_for_gender))
-        .with_state(app_state)
 }
 
-async fn create(
-    State(app_state): State<AppState>,
-    Json(create_user): Json<CreateUser>,
-) -> impl IntoResponse {
+async fn create(Json(create_user): Json<CreateUser>) -> impl IntoResponse {
     match User::create(
         &create_user.name,
         &create_user.surname,
         &create_user.gender,
         &create_user.birth_date,
-        &app_state.database_connection,
     )
     .await
     {
@@ -82,8 +77,8 @@ async fn create(
     }
 }
 
-async fn read(State(app_state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
-    match User::read(&id, &app_state.database_connection).await {
+async fn read(Path(id): Path<i64>) -> impl IntoResponse {
+    match User::read(&id).await {
         Ok(user) => (StatusCode::OK, Json(serde_json::json!(user))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -92,10 +87,7 @@ async fn read(State(app_state): State<AppState>, Path(id): Path<i64>) -> impl In
     }
 }
 
-async fn update(
-    State(app_state): State<AppState>,
-    Json(update_user): Json<UpdateUser>,
-) -> impl IntoResponse {
+async fn update(Json(update_user): Json<UpdateUser>) -> impl IntoResponse {
     match User::update(
         &update_user.id,
         &update_user.name,
@@ -103,7 +95,6 @@ async fn update(
         &update_user.gender,
         &update_user.birth_date,
         &update_user.role_id,
-        &app_state.database_connection,
     )
     .await
     {
@@ -115,8 +106,8 @@ async fn update(
     }
 }
 
-async fn delete_(State(app_state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
-    match User::delete(&id, &app_state.database_connection).await {
+async fn delete_(Path(id): Path<i64>) -> impl IntoResponse {
+    match User::delete(&id).await {
         Ok(user) => (StatusCode::NO_CONTENT, Json(serde_json::json!(user))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -125,8 +116,8 @@ async fn delete_(State(app_state): State<AppState>, Path(id): Path<i64>) -> impl
     }
 }
 
-async fn read_all(State(app_state): State<AppState>) -> impl IntoResponse {
-    match User::read_all(&app_state.database_connection).await {
+async fn read_all() -> impl IntoResponse {
+    match User::read_all().await {
         Ok(users) => (StatusCode::OK, Json(serde_json::json!(users))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -135,11 +126,8 @@ async fn read_all(State(app_state): State<AppState>) -> impl IntoResponse {
     }
 }
 
-async fn read_all_for_name(
-    State(app_state): State<AppState>,
-    Path(name): Path<String>,
-) -> impl IntoResponse {
-    match User::read_all_for_name(&name, &app_state.database_connection).await {
+async fn read_all_for_name(Path(name): Path<String>) -> impl IntoResponse {
+    match User::read_all_for_name(&name).await {
         Ok(users) => (StatusCode::OK, Json(serde_json::json!(users))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -148,11 +136,8 @@ async fn read_all_for_name(
     }
 }
 
-async fn read_all_for_surname(
-    State(app_state): State<AppState>,
-    Path(surname): Path<String>,
-) -> impl IntoResponse {
-    match User::read_all_for_surname(&surname, &app_state.database_connection).await {
+async fn read_all_for_surname(Path(surname): Path<String>) -> impl IntoResponse {
+    match User::read_all_for_surname(&surname).await {
         Ok(users) => (StatusCode::OK, Json(serde_json::json!(users))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -161,11 +146,8 @@ async fn read_all_for_surname(
     }
 }
 
-async fn read_all_for_birth_date(
-    State(app_state): State<AppState>,
-    Path(birth_date): Path<NaiveDate>,
-) -> impl IntoResponse {
-    match User::read_all_for_birth_date(&birth_date, &app_state.database_connection).await {
+async fn read_all_for_birth_date(Path(birth_date): Path<NaiveDate>) -> impl IntoResponse {
+    match User::read_all_for_birth_date(&birth_date).await {
         Ok(users) => (StatusCode::OK, Json(serde_json::json!(users))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -174,11 +156,8 @@ async fn read_all_for_birth_date(
     }
 }
 
-async fn read_all_for_role(
-    State(app_state): State<AppState>,
-    Path(role_id): Path<i64>,
-) -> impl IntoResponse {
-    match User::read_all_for_role(&role_id, &app_state.database_connection).await {
+async fn read_all_for_role(Path(role_id): Path<i64>) -> impl IntoResponse {
+    match User::read_all_for_role(&role_id).await {
         Ok(users) => (StatusCode::OK, Json(serde_json::json!(users))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -187,11 +166,8 @@ async fn read_all_for_role(
     }
 }
 
-async fn read_all_for_gender(
-    State(app_state): State<AppState>,
-    Path(gender): Path<bool>,
-) -> impl IntoResponse {
-    match User::read_all_for_gender(&gender, &app_state.database_connection).await {
+async fn read_all_for_gender(Path(gender): Path<bool>) -> impl IntoResponse {
+    match User::read_all_for_gender(&gender).await {
         Ok(users) => (StatusCode::OK, Json(serde_json::json!(users))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -200,8 +176,8 @@ async fn read_all_for_gender(
     }
 }
 
-async fn read_all_id(State(app_state): State<AppState>) -> impl IntoResponse {
-    match User::read_all_id(&app_state.database_connection).await {
+async fn read_all_id() -> impl IntoResponse {
+    match User::read_all_id().await {
         Ok(user_ids) => (StatusCode::OK, Json(serde_json::json!(user_ids))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -210,11 +186,8 @@ async fn read_all_id(State(app_state): State<AppState>) -> impl IntoResponse {
     }
 }
 
-async fn read_all_id_for_name(
-    State(app_state): State<AppState>,
-    Path(name): Path<String>,
-) -> impl IntoResponse {
-    match User::read_all_id_for_name(&name, &app_state.database_connection).await {
+async fn read_all_id_for_name(Path(name): Path<String>) -> impl IntoResponse {
+    match User::read_all_id_for_name(&name).await {
         Ok(user_ids) => (StatusCode::OK, Json(serde_json::json!(user_ids))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -223,11 +196,8 @@ async fn read_all_id_for_name(
     }
 }
 
-async fn read_all_id_for_surname(
-    State(app_state): State<AppState>,
-    Path(surname): Path<String>,
-) -> impl IntoResponse {
-    match User::read_all_id_for_surname(&surname, &app_state.database_connection).await {
+async fn read_all_id_for_surname(Path(surname): Path<String>) -> impl IntoResponse {
+    match User::read_all_id_for_surname(&surname).await {
         Ok(user_ids) => (StatusCode::OK, Json(serde_json::json!(user_ids))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -236,11 +206,8 @@ async fn read_all_id_for_surname(
     }
 }
 
-async fn read_all_id_for_birth_date(
-    State(app_state): State<AppState>,
-    Path(birth_date): Path<NaiveDate>,
-) -> impl IntoResponse {
-    match User::read_all_id_for_birth_date(&birth_date, &app_state.database_connection).await {
+async fn read_all_id_for_birth_date(Path(birth_date): Path<NaiveDate>) -> impl IntoResponse {
+    match User::read_all_id_for_birth_date(&birth_date).await {
         Ok(user_ids) => (StatusCode::OK, Json(serde_json::json!(user_ids))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -249,11 +216,8 @@ async fn read_all_id_for_birth_date(
     }
 }
 
-async fn read_all_id_for_role(
-    State(app_state): State<AppState>,
-    Path(role_id): Path<i64>,
-) -> impl IntoResponse {
-    match User::read_all_id_for_role(&role_id, &app_state.database_connection).await {
+async fn read_all_id_for_role(Path(role_id): Path<i64>) -> impl IntoResponse {
+    match User::read_all_id_for_role(&role_id).await {
         Ok(user_ids) => (StatusCode::OK, Json(serde_json::json!(user_ids))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -262,11 +226,8 @@ async fn read_all_id_for_role(
     }
 }
 
-async fn read_all_id_for_gender(
-    State(app_state): State<AppState>,
-    Path(gender): Path<bool>,
-) -> impl IntoResponse {
-    match User::read_all_id_for_gender(&gender, &app_state.database_connection).await {
+async fn read_all_id_for_gender(Path(gender): Path<bool>) -> impl IntoResponse {
+    match User::read_all_id_for_gender(&gender).await {
         Ok(user_ids) => (StatusCode::OK, Json(serde_json::json!(user_ids))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -275,8 +236,8 @@ async fn read_all_id_for_gender(
     }
 }
 
-async fn count_all(State(app_state): State<AppState>) -> impl IntoResponse {
-    match User::count_all(&app_state.database_connection).await {
+async fn count_all() -> impl IntoResponse {
+    match User::count_all().await {
         Ok(count) => (StatusCode::OK, Json(serde_json::json!(count))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -285,11 +246,8 @@ async fn count_all(State(app_state): State<AppState>) -> impl IntoResponse {
     }
 }
 
-async fn count_all_for_name(
-    State(app_state): State<AppState>,
-    Path(name): Path<String>,
-) -> impl IntoResponse {
-    match User::count_all_for_name(&name, &app_state.database_connection).await {
+async fn count_all_for_name(Path(name): Path<String>) -> impl IntoResponse {
+    match User::count_all_for_name(&name).await {
         Ok(count) => (StatusCode::OK, Json(serde_json::json!(count))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -298,11 +256,8 @@ async fn count_all_for_name(
     }
 }
 
-async fn count_all_for_surname(
-    State(app_state): State<AppState>,
-    Path(surname): Path<String>,
-) -> impl IntoResponse {
-    match User::count_all_for_surname(&surname, &app_state.database_connection).await {
+async fn count_all_for_surname(Path(surname): Path<String>) -> impl IntoResponse {
+    match User::count_all_for_surname(&surname).await {
         Ok(count) => (StatusCode::OK, Json(serde_json::json!(count))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -311,11 +266,8 @@ async fn count_all_for_surname(
     }
 }
 
-async fn count_all_for_birth_date(
-    State(app_state): State<AppState>,
-    Path(birth_date): Path<NaiveDate>,
-) -> impl IntoResponse {
-    match User::count_all_for_birth_date(&birth_date, &app_state.database_connection).await {
+async fn count_all_for_birth_date(Path(birth_date): Path<NaiveDate>) -> impl IntoResponse {
+    match User::count_all_for_birth_date(&birth_date).await {
         Ok(count) => (StatusCode::OK, Json(serde_json::json!(count))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -324,11 +276,8 @@ async fn count_all_for_birth_date(
     }
 }
 
-async fn count_all_for_role(
-    State(app_state): State<AppState>,
-    Path(role_id): Path<i64>,
-) -> impl IntoResponse {
-    match User::count_all_for_role(&role_id, &app_state.database_connection).await {
+async fn count_all_for_role(Path(role_id): Path<i64>) -> impl IntoResponse {
+    match User::count_all_for_role(&role_id).await {
         Ok(count) => (StatusCode::OK, Json(serde_json::json!(count))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -337,11 +286,8 @@ async fn count_all_for_role(
     }
 }
 
-async fn count_all_for_gender(
-    State(app_state): State<AppState>,
-    Path(gender): Path<bool>,
-) -> impl IntoResponse {
-    match User::count_all_for_gender(&gender, &app_state.database_connection).await {
+async fn count_all_for_gender(Path(gender): Path<bool>) -> impl IntoResponse {
+    match User::count_all_for_gender(&gender).await {
         Ok(count) => (StatusCode::OK, Json(serde_json::json!(count))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,

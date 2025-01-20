@@ -1,13 +1,17 @@
+use std::sync::LazyLock;
+
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
 use crate::{
     error::ForumMailError,
     mail::{MailFieldsOneTimePassword, MailTemplate},
-    ONE_TIME_PASSWORDS,
 };
 
 use super::user::User;
+
+static ONE_TIME_PASSWORDS: LazyLock<RwLock<Vec<OneTimePassword>>> =
+    LazyLock::new(OneTimePassword::init);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct OneTimePassword {

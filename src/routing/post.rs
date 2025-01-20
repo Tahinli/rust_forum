@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, State},
+    extract::Path,
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, patch, post},
@@ -8,7 +8,7 @@ use axum::{
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{feature::post::Post, AppState};
+use crate::feature::post::Post;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreatePost {
@@ -23,27 +23,17 @@ struct UpdatePost {
     post: String,
 }
 
-pub fn route(State(app_state): State<AppState>) -> Router<AppState> {
+pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
         .route("/:creation_time", get(read))
         .route("/", patch(update))
         .route("/:creation_time", delete(delete_))
         .route("/", get(read_all))
-        .with_state(app_state)
 }
 
-async fn create(
-    State(app_state): State<AppState>,
-    Json(create_post): Json<CreatePost>,
-) -> impl IntoResponse {
-    match Post::create(
-        &create_post.user_id,
-        &create_post.post,
-        &app_state.database_connection,
-    )
-    .await
-    {
+async fn create(Json(create_post): Json<CreatePost>) -> impl IntoResponse {
+    match Post::create(&create_post.user_id, &create_post.post).await {
         Ok(post) => (StatusCode::CREATED, Json(serde_json::json!(post))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -52,11 +42,8 @@ async fn create(
     }
 }
 
-async fn read(
-    State(app_state): State<AppState>,
-    Path(creation_time): Path<DateTime<Utc>>,
-) -> impl IntoResponse {
-    match Post::read(&creation_time, &app_state.database_connection).await {
+async fn read(Path(creation_time): Path<DateTime<Utc>>) -> impl IntoResponse {
+    match Post::read(&creation_time).await {
         Ok(post) => (StatusCode::OK, Json(serde_json::json!(post))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -65,15 +52,11 @@ async fn read(
     }
 }
 
-async fn update(
-    State(app_state): State<AppState>,
-    Json(update_role): Json<UpdatePost>,
-) -> impl IntoResponse {
+async fn update(Json(update_role): Json<UpdatePost>) -> impl IntoResponse {
     match Post::update(
         &update_role.creation_time,
         &update_role.user_id,
         &update_role.post,
-        &app_state.database_connection,
     )
     .await
     {
@@ -85,11 +68,8 @@ async fn update(
     }
 }
 
-async fn delete_(
-    State(app_state): State<AppState>,
-    Path(creation_time): Path<DateTime<Utc>>,
-) -> impl IntoResponse {
-    match Post::delete(&creation_time, &app_state.database_connection).await {
+async fn delete_(Path(creation_time): Path<DateTime<Utc>>) -> impl IntoResponse {
+    match Post::delete(&creation_time).await {
         Ok(post) => (StatusCode::NO_CONTENT, Json(serde_json::json!(post))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -98,8 +78,8 @@ async fn delete_(
     }
 }
 
-async fn read_all(State(app_state): State<AppState>) -> impl IntoResponse {
-    match Post::read_all(&app_state.database_connection).await {
+async fn read_all() -> impl IntoResponse {
+    match Post::read_all().await {
         Ok(posts) => (StatusCode::OK, Json(serde_json::json!(posts))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,

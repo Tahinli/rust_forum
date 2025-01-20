@@ -7,7 +7,6 @@ use jwt_simple::{
     prelude::{HS256Key, MACLike},
 };
 use serde::{Deserialize, Serialize};
-use sqlx::{Pool, Postgres};
 
 use crate::{database::login, error::ForumAuthError, SERVER_CONFIG};
 
@@ -65,34 +64,26 @@ pub struct Login {
 }
 
 impl Login {
-    pub async fn create(
-        user_id: &i64,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Login, sqlx::Error> {
-        User::read(user_id, database_connection).await?;
+    pub async fn create(user_id: &i64) -> Result<Login, sqlx::Error> {
+        User::read(user_id).await?;
 
         let token = TokenMeta::create_token(user_id)
             .await
             .expect("Should not panic if it isn't configured wrong");
-        login::create(user_id, &token, database_connection).await
+        login::create(user_id, &token).await
     }
 
-    pub async fn read(
-        user_id: &i64,
-        token: &String,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Login, sqlx::Error> {
-        User::read(user_id, database_connection).await?;
+    pub async fn read(user_id: &i64, token: &String) -> Result<Login, sqlx::Error> {
+        User::read(user_id).await?;
 
-        login::read(user_id, token, database_connection).await
+        login::read(user_id, token).await
     }
 
     pub async fn update(
         user_id: &i64,
         token: &String,
-        database_connection: &Pool<Postgres>,
     ) -> Result<Login, Box<dyn std::error::Error>> {
-        let login = Login::read(user_id, token, database_connection).await?;
+        let login = Login::read(user_id, token).await?;
         match TokenMeta::verify_token(token).await {
             Ok(_) => Ok(login),
             Err(_) => {
@@ -101,8 +92,8 @@ impl Login {
                     .num_minutes()
                     <= SERVER_CONFIG.login_token_refresh_time_limit as i64
                 {
-                    Login::delete(user_id, token, database_connection).await?;
-                    let login = Login::create(user_id, database_connection).await?;
+                    Login::delete(user_id, token).await?;
+                    let login = Login::create(user_id).await?;
                     Ok(login)
                 } else {
                     Err(Box::new(ForumAuthError::TokenRefreshTimeOver))
@@ -110,32 +101,19 @@ impl Login {
             }
         }
     }
-    pub async fn delete(
-        user_id: &i64,
-        token: &String,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Login, sqlx::Error> {
-        login::delete(user_id, token, database_connection).await
+    pub async fn delete(user_id: &i64, token: &String) -> Result<Login, sqlx::Error> {
+        login::delete(user_id, token).await
     }
 
-    pub async fn read_all_for_user(
-        user_id: &i64,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Vec<Login>, sqlx::Error> {
-        login::read_all_for_user(user_id, database_connection).await
+    pub async fn read_all_for_user(user_id: &i64) -> Result<Vec<Login>, sqlx::Error> {
+        login::read_all_for_user(user_id).await
     }
 
-    pub async fn delete_all_for_user(
-        user_id: &i64,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<Vec<Login>, sqlx::Error> {
-        login::delete_all_for_user(user_id, database_connection).await
+    pub async fn delete_all_for_user(user_id: &i64) -> Result<Vec<Login>, sqlx::Error> {
+        login::delete_all_for_user(user_id).await
     }
 
-    pub async fn count_all_for_user(
-        user_id: &i64,
-        database_connection: &Pool<Postgres>,
-    ) -> Result<u64, sqlx::Error> {
-        login::count_all_for_user(user_id, database_connection).await
+    pub async fn count_all_for_user(user_id: &i64) -> Result<u64, sqlx::Error> {
+        login::count_all_for_user(user_id).await
     }
 }

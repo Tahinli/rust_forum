@@ -1,31 +1,23 @@
-use sqlx::{Pool, Postgres};
-
 use crate::feature::user_contact::UserContact;
 
-pub async fn create(
-    user_id: &i64,
-    contact_id: &i64,
-    database_connection: &Pool<Postgres>,
-) -> Result<UserContact, sqlx::Error> {
+use super::DATABASE_CONNECTIONS;
+
+pub async fn create(user_id: &i64, contact_id: &i64) -> Result<UserContact, sqlx::Error> {
     sqlx::query_as!(
         UserContact,
         r#"
-            INSERT INTO "user_contact"(user_id, contact_id) 
-            VALUES ($1, $2) 
+            INSERT INTO "user_contact"(user_id, contact_id)
+            VALUES ($1, $2)
             RETURNING *
         "#,
         user_id,
         contact_id,
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn read(
-    user_id: &i64,
-    contact_id: &i64,
-    database_connection: &Pool<Postgres>,
-) -> Result<UserContact, sqlx::Error> {
+pub async fn read(user_id: &i64, contact_id: &i64) -> Result<UserContact, sqlx::Error> {
     sqlx::query_as!(
         UserContact,
         r#"
@@ -34,15 +26,11 @@ pub async fn read(
         user_id,
         contact_id
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn update(
-    user_id: &i64,
-    contact_id: &i64,
-    database_connection: &Pool<Postgres>,
-) -> Result<UserContact, sqlx::Error> {
+pub async fn update(user_id: &i64, contact_id: &i64) -> Result<UserContact, sqlx::Error> {
     sqlx::query_as!(
         UserContact,
         r#"
@@ -52,15 +40,11 @@ pub async fn update(
         user_id,
         contact_id,
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn delete(
-    user_id: &i64,
-    contact_id: &i64,
-    database_connection: &Pool<Postgres>,
-) -> Result<UserContact, sqlx::Error> {
+pub async fn delete(user_id: &i64, contact_id: &i64) -> Result<UserContact, sqlx::Error> {
     sqlx::query_as!(
         UserContact,
         r#"
@@ -70,14 +54,11 @@ pub async fn delete(
         user_id,
         contact_id,
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn read_all_for_user(
-    user_id: &i64,
-    database_connection: &Pool<Postgres>,
-) -> Result<Vec<UserContact>, sqlx::Error> {
+pub async fn read_all_for_user(user_id: &i64) -> Result<Vec<UserContact>, sqlx::Error> {
     sqlx::query_as!(
         UserContact,
         r#"
@@ -85,14 +66,11 @@ pub async fn read_all_for_user(
         "#,
         user_id,
     )
-    .fetch_all(database_connection)
+    .fetch_all(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn delete_all_for_user(
-    user_id: &i64,
-    database_connection: &Pool<Postgres>,
-) -> Result<Vec<UserContact>, sqlx::Error> {
+pub async fn delete_all_for_user(user_id: &i64) -> Result<Vec<UserContact>, sqlx::Error> {
     sqlx::query_as!(
         UserContact,
         r#"
@@ -101,6 +79,6 @@ pub async fn delete_all_for_user(
     "#,
         user_id,
     )
-    .fetch_all(database_connection)
+    .fetch_all(&*DATABASE_CONNECTIONS)
     .await
 }

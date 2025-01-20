@@ -9,17 +9,19 @@ pub mod role;
 pub mod user;
 pub mod user_contact;
 
-use std::time::Duration;
+use std::{sync::LazyLock, time::Duration};
 
 use sqlx::{postgres::PgPoolOptions, Connection, Pool, Postgres};
 use tokio::time::sleep;
 
 use crate::DatabaseConfig;
 
+static DATABASE_CONNECTIONS: LazyLock<Pool<Postgres>> = LazyLock::new(establish_connection);
+
 pub async fn set_database_up(database_connection: &Pool<Postgres>) {
     sqlx::migrate!().run(database_connection).await.unwrap();
 }
-pub async fn establish_connection() -> Pool<Postgres> {
+pub fn establish_connection() -> Pool<Postgres> {
     let database_config = DatabaseConfig::default();
     let connection_string = format!(
         "{}://{}:{}@{}/{}",
@@ -32,14 +34,13 @@ pub async fn establish_connection() -> Pool<Postgres> {
     PgPoolOptions::new()
         .max_connections(database_config.connection_pool_size)
         .test_before_acquire(false)
-        .connect(&connection_string)
-        .await
+        .connect_lazy(&connection_string)
         .unwrap()
 }
 
-pub async fn is_alive(database_connection: &Pool<Postgres>) -> bool {
+pub async fn is_alive() -> bool {
     tokio::select! {
-        database_connection = database_connection.acquire() => {
+        database_connection = DATABASE_CONNECTIONS.acquire() => {
             match database_connection {
                 Ok(mut database_connection) => {
                     match database_connection.ping().await {

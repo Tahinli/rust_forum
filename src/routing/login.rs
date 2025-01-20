@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, State},
+    extract::Path,
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, patch, post},
@@ -7,10 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    feature::{auth::OneTimePassword, login::Login},
-    AppState,
-};
+use crate::feature::{auth::OneTimePassword, login::Login};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateLogin {
@@ -23,7 +20,7 @@ struct UpdateLogin {
     pub token: String,
 }
 
-pub fn route(State(app_state): State<AppState>) -> Router<AppState> {
+pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
         .route("/users/:user_id/token/:token", get(read))
@@ -32,28 +29,17 @@ pub fn route(State(app_state): State<AppState>) -> Router<AppState> {
         .route("/users/:user_id", get(read_all_for_user))
         .route("/users/:user_id", delete(delete_all_for_user))
         .route("/count/users/:user_id", get(count_all_for_user))
-        .with_state(app_state)
 }
 
-async fn create(
-    State(app_state): State<AppState>,
-    Json(create_login): Json<CreateLogin>,
-) -> impl IntoResponse {
+async fn create(Json(create_login): Json<CreateLogin>) -> impl IntoResponse {
     match OneTimePassword::verify(&create_login.one_time_password).await {
-        true => {
-            match Login::create(
-                &create_login.one_time_password.user_id,
-                &app_state.database_connection,
-            )
-            .await
-            {
-                Ok(login) => (StatusCode::CREATED, Json(serde_json::json!(login))),
-                Err(err_val) => (
-                    StatusCode::BAD_REQUEST,
-                    Json(serde_json::json!(err_val.to_string())),
-                ),
-            }
-        }
+        true => match Login::create(&create_login.one_time_password.user_id).await {
+            Ok(login) => (StatusCode::CREATED, Json(serde_json::json!(login))),
+            Err(err_val) => (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!(err_val.to_string())),
+            ),
+        },
         false => (
             StatusCode::BAD_REQUEST,
             Json(serde_json::json!(
@@ -63,11 +49,8 @@ async fn create(
     }
 }
 
-async fn read(
-    State(app_state): State<AppState>,
-    Path((user_id, token)): Path<(i64, String)>,
-) -> impl IntoResponse {
-    match Login::read(&user_id, &token, &app_state.database_connection).await {
+async fn read(Path((user_id, token)): Path<(i64, String)>) -> impl IntoResponse {
+    match Login::read(&user_id, &token).await {
         Ok(login) => (StatusCode::OK, Json(serde_json::json!(login))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -76,17 +59,8 @@ async fn read(
     }
 }
 
-async fn update(
-    State(app_state): State<AppState>,
-    Json(update_role): Json<UpdateLogin>,
-) -> impl IntoResponse {
-    match Login::update(
-        &update_role.user_id,
-        &update_role.token,
-        &app_state.database_connection,
-    )
-    .await
-    {
+async fn update(Json(update_role): Json<UpdateLogin>) -> impl IntoResponse {
+    match Login::update(&update_role.user_id, &update_role.token).await {
         Ok(login) => (StatusCode::ACCEPTED, Json(serde_json::json!(login))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -95,11 +69,8 @@ async fn update(
     }
 }
 
-async fn delete_(
-    State(app_state): State<AppState>,
-    Path((user_id, token)): Path<(i64, String)>,
-) -> impl IntoResponse {
-    match Login::delete(&user_id, &token, &app_state.database_connection).await {
+async fn delete_(Path((user_id, token)): Path<(i64, String)>) -> impl IntoResponse {
+    match Login::delete(&user_id, &token).await {
         Ok(login) => (StatusCode::NO_CONTENT, Json(serde_json::json!(login))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -108,11 +79,8 @@ async fn delete_(
     }
 }
 
-async fn read_all_for_user(
-    State(app_state): State<AppState>,
-    Path(user_id): Path<i64>,
-) -> impl IntoResponse {
-    match Login::read_all_for_user(&user_id, &app_state.database_connection).await {
+async fn read_all_for_user(Path(user_id): Path<i64>) -> impl IntoResponse {
+    match Login::read_all_for_user(&user_id).await {
         Ok(logins) => (StatusCode::OK, Json(serde_json::json!(logins))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -121,11 +89,8 @@ async fn read_all_for_user(
     }
 }
 
-async fn delete_all_for_user(
-    State(app_state): State<AppState>,
-    Path(user_id): Path<i64>,
-) -> impl IntoResponse {
-    match Login::delete_all_for_user(&user_id, &app_state.database_connection).await {
+async fn delete_all_for_user(Path(user_id): Path<i64>) -> impl IntoResponse {
+    match Login::delete_all_for_user(&user_id).await {
         Ok(logins) => (StatusCode::OK, Json(serde_json::json!(logins))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -134,11 +99,8 @@ async fn delete_all_for_user(
     }
 }
 
-async fn count_all_for_user(
-    State(app_state): State<AppState>,
-    Path(user_id): Path<i64>,
-) -> impl IntoResponse {
-    match Login::count_all_for_user(&user_id, &app_state.database_connection).await {
+async fn count_all_for_user(Path(user_id): Path<i64>) -> impl IntoResponse {
+    match Login::count_all_for_user(&user_id).await {
         Ok(login_count) => (StatusCode::OK, Json(serde_json::json!(login_count))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,

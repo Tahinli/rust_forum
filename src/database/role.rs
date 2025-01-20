@@ -1,25 +1,22 @@
-use sqlx::{Pool, Postgres};
-
 use crate::feature::role::Role;
 
-pub async fn create(
-    name: &String,
-    database_connection: &Pool<Postgres>,
-) -> Result<Role, sqlx::Error> {
+use super::DATABASE_CONNECTIONS;
+
+pub async fn create(name: &String) -> Result<Role, sqlx::Error> {
     sqlx::query_as!(
         Role,
         r#"
-            INSERT INTO "role"(name) 
-            VALUES ($1) 
+            INSERT INTO "role"(name)
+            VALUES ($1)
             RETURNING *
         "#,
         name,
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn read(id: &i64, database_connection: &Pool<Postgres>) -> Result<Role, sqlx::Error> {
+pub async fn read(id: &i64) -> Result<Role, sqlx::Error> {
     sqlx::query_as!(
         Role,
         r#"
@@ -27,15 +24,11 @@ pub async fn read(id: &i64, database_connection: &Pool<Postgres>) -> Result<Role
         "#,
         id
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn update(
-    id: &i64,
-    name: &String,
-    database_connection: &Pool<Postgres>,
-) -> Result<Role, sqlx::Error> {
+pub async fn update(id: &i64, name: &String) -> Result<Role, sqlx::Error> {
     sqlx::query_as!(
         Role,
         r#"
@@ -45,11 +38,11 @@ pub async fn update(
         id,
         name,
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn delete(id: &i64, database_connection: &Pool<Postgres>) -> Result<Role, sqlx::Error> {
+pub async fn delete(id: &i64) -> Result<Role, sqlx::Error> {
     sqlx::query_as!(
         Role,
         r#"
@@ -58,17 +51,17 @@ pub async fn delete(id: &i64, database_connection: &Pool<Postgres>) -> Result<Ro
     "#,
         id
     )
-    .fetch_one(database_connection)
+    .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn read_all(database_connection: &Pool<Postgres>) -> Result<Vec<Role>, sqlx::Error> {
+pub async fn read_all() -> Result<Vec<Role>, sqlx::Error> {
     sqlx::query_as!(
         Role,
         r#"
             SELECT * FROM "role"
         "#,
     )
-    .fetch_all(database_connection)
+    .fetch_all(&*DATABASE_CONNECTIONS)
     .await
 }

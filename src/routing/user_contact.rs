@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, State},
+    extract::Path,
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, patch, post},
@@ -7,7 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{feature::user_contact::UserContact, AppState};
+use crate::feature::user_contact::UserContact;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateUserContact {
@@ -21,7 +21,7 @@ struct UpdateUserContact {
     pub contact_id: i64,
 }
 
-pub fn route(State(app_state): State<AppState>) -> Router<AppState> {
+pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
         .route("/roles/:user_id/contacts/:contact_id", get(read))
@@ -29,17 +29,12 @@ pub fn route(State(app_state): State<AppState>) -> Router<AppState> {
         .route("/roles/:user_id/contacts/:contact_id", delete(delete_))
         .route("/users/:user_id", get(read_all_for_user))
         .route("/users/:user_id", delete(delete_all_for_user))
-        .with_state(app_state)
 }
 
-async fn create(
-    State(app_state): State<AppState>,
-    Json(create_user_contact): Json<CreateUserContact>,
-) -> impl IntoResponse {
+async fn create(Json(create_user_contact): Json<CreateUserContact>) -> impl IntoResponse {
     match UserContact::create(
         &create_user_contact.user_id,
         &create_user_contact.contact_id,
-        &app_state.database_connection,
     )
     .await
     {
@@ -51,11 +46,8 @@ async fn create(
     }
 }
 
-async fn read(
-    State(app_state): State<AppState>,
-    Path((user_id, contact_id)): Path<(i64, i64)>,
-) -> impl IntoResponse {
-    match UserContact::read(&user_id, &contact_id, &app_state.database_connection).await {
+async fn read(Path((user_id, contact_id)): Path<(i64, i64)>) -> impl IntoResponse {
+    match UserContact::read(&user_id, &contact_id).await {
         Ok(user_contact) => (StatusCode::OK, Json(serde_json::json!(user_contact))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -64,17 +56,8 @@ async fn read(
     }
 }
 
-async fn update(
-    State(app_state): State<AppState>,
-    Json(update_role): Json<UpdateUserContact>,
-) -> impl IntoResponse {
-    match UserContact::update(
-        &update_role.user_id,
-        &update_role.contact_id,
-        &app_state.database_connection,
-    )
-    .await
-    {
+async fn update(Json(update_role): Json<UpdateUserContact>) -> impl IntoResponse {
+    match UserContact::update(&update_role.user_id, &update_role.contact_id).await {
         Ok(user_contact) => (StatusCode::ACCEPTED, Json(serde_json::json!(user_contact))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -83,11 +66,8 @@ async fn update(
     }
 }
 
-async fn delete_(
-    State(app_state): State<AppState>,
-    Path((user_id, contact_id)): Path<(i64, i64)>,
-) -> impl IntoResponse {
-    match UserContact::delete(&user_id, &contact_id, &app_state.database_connection).await {
+async fn delete_(Path((user_id, contact_id)): Path<(i64, i64)>) -> impl IntoResponse {
+    match UserContact::delete(&user_id, &contact_id).await {
         Ok(user_contact) => (
             StatusCode::NO_CONTENT,
             Json(serde_json::json!(user_contact)),
@@ -99,11 +79,8 @@ async fn delete_(
     }
 }
 
-async fn read_all_for_user(
-    State(app_state): State<AppState>,
-    Path(user_id): Path<i64>,
-) -> impl IntoResponse {
-    match UserContact::read_all_for_user(&user_id, &app_state.database_connection).await {
+async fn read_all_for_user(Path(user_id): Path<i64>) -> impl IntoResponse {
+    match UserContact::read_all_for_user(&user_id).await {
         Ok(role_contacts) => (StatusCode::OK, Json(serde_json::json!(role_contacts))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -112,11 +89,8 @@ async fn read_all_for_user(
     }
 }
 
-async fn delete_all_for_user(
-    State(app_state): State<AppState>,
-    Path(user_id): Path<i64>,
-) -> impl IntoResponse {
-    match UserContact::delete_all_for_user(&user_id, &app_state.database_connection).await {
+async fn delete_all_for_user(Path(user_id): Path<i64>) -> impl IntoResponse {
+    match UserContact::delete_all_for_user(&user_id).await {
         Ok(role_contacts) => (StatusCode::OK, Json(serde_json::json!(role_contacts))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
