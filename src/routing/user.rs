@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::feature::user::User;
 
+use super::middleware;
+
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateUser {
     name: String,
@@ -31,33 +33,45 @@ struct UpdateUser {
 pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
-        .route("/:id", get(read))
-        .route("/", patch(update))
-        .route("/:id", delete(delete_))
-        .route("/", get(read_all))
-        .route("/names/:name", get(read_all_for_name))
-        .route("/surnames/:surname", get(read_all_for_surname))
-        .route("/birth_dates/:birth_date", get(read_all_for_birth_date))
-        .route("/roles/:role", get(read_all_for_role))
-        .route("/genders/:gender", get(read_all_for_gender))
-        .route("/ids", get(read_all_id))
-        .route("/ids/names/:name", get(read_all_id_for_name))
-        .route("/ids/surnames/:surname", get(read_all_id_for_surname))
         .route(
-            "/ids/birth_dates/:birth_date",
+            "/{id}",
+            get(read).route_layer(axum::middleware::from_fn(middleware::pass)),
+        )
+        .route(
+            "/",
+            patch(update).route_layer(axum::middleware::from_fn(middleware::pass_higher_or_self)),
+        )
+        .route(
+            "/{id}",
+            delete(delete_).route_layer(axum::middleware::from_fn(middleware::pass_higher_or_self)),
+        )
+        .route(
+            "/",
+            get(read_all).route_layer(axum::middleware::from_fn(middleware::pass_builder_or_admin)),
+        )
+        .route("/names/{name}", get(read_all_for_name))
+        .route("/surnames/{surname}", get(read_all_for_surname))
+        .route("/birth_dates/{birth_date}", get(read_all_for_birth_date))
+        .route("/roles/{role}", get(read_all_for_role))
+        .route("/genders/{gender}", get(read_all_for_gender))
+        .route("/ids", get(read_all_id))
+        .route("/ids/names/{name}", get(read_all_id_for_name))
+        .route("/ids/surnames/{surname}", get(read_all_id_for_surname))
+        .route(
+            "/ids/birth_dates/{birth_date}",
             get(read_all_id_for_birth_date),
         )
-        .route("/ids/roles/:role", get(read_all_id_for_role))
-        .route("/ids/genders/:gender", get(read_all_id_for_gender))
+        .route("/ids/roles/{role}", get(read_all_id_for_role))
+        .route("/ids/genders/{gender}", get(read_all_id_for_gender))
         .route("/count", get(count_all))
-        .route("/count/names/:name", get(count_all_for_name))
-        .route("/count/surnames/:surname", get(count_all_for_surname))
+        .route("/count/names/{name}", get(count_all_for_name))
+        .route("/count/surnames/{surname}", get(count_all_for_surname))
         .route(
-            "/count/birth_dates/:birth_date",
+            "/count/birth_dates/{birth_date}",
             get(count_all_for_birth_date),
         )
-        .route("/count/roles/:role", get(count_all_for_role))
-        .route("/count/genders/:gender", get(count_all_for_gender))
+        .route("/count/roles/{role}", get(count_all_for_role))
+        .route("/count/genders/{gender}", get(count_all_for_gender))
 }
 
 async fn create(Json(create_user): Json<CreateUser>) -> impl IntoResponse {

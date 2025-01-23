@@ -28,10 +28,10 @@ struct UpdatePostInteraction {
 pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
-        .route("/:interaction_time", get(read))
+        .route("/{interaction_time}", get(read))
         .route("/", patch(update))
-        .route("/:interaction_time", delete(delete_))
-        .route("/posts/:post_creation_time", get(read_all_for_post))
+        .route("/{interaction_time}", delete(delete_))
+        .route("/posts/{post_creation_time}", get(read_all_for_post))
 }
 
 async fn create(Json(create_post_interaction): Json<CreatePostInteraction>) -> impl IntoResponse {

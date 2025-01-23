@@ -57,6 +57,11 @@ impl Default for ServerConfig {
     fn default() -> Self {
         let (header, mut server_configs) = naive_toml_parser(SERVER_CONFIG_FILE_LOCATION);
         let value_or_max = |value: String| value.parse().map_or(usize::MAX, |value| value);
+        let value_or_semaphore_max = |value: String| {
+            value
+                .parse()
+                .map_or(tokio::sync::Semaphore::MAX_PERMITS, |value| value)
+        };
 
         if header == "[server_config]" {
             Self {
@@ -66,7 +71,7 @@ impl Default for ServerConfig {
                     server_configs.pop_front().unwrap(),
                 ),
                 login_token_refresh_time_limit: value_or_max(server_configs.pop_front().unwrap()),
-                concurrency_limit: value_or_max(server_configs.pop_front().unwrap()),
+                concurrency_limit: value_or_semaphore_max(server_configs.pop_front().unwrap()),
             }
         } else {
             panic!("Server Config File Must Include [server_config] at the First Line")

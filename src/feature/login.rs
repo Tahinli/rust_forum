@@ -14,6 +14,11 @@ use super::user::User;
 
 static TOKEN_META: LazyLock<TokenMeta> = LazyLock::new(TokenMeta::init);
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CustomClaim {
+    pub user_id: i64,
+}
+
 pub struct TokenMeta {
     token_key: HS256Key,
     token_verification_options: Option<VerificationOptions>,
@@ -33,9 +38,9 @@ impl TokenMeta {
 
     async fn create_token(user_id: &i64) -> Option<String> {
         let key = &TOKEN_META.token_key;
-
+        let custom_claim = CustomClaim { user_id: *user_id };
         let claims = Claims::with_custom_claims(
-            *user_id,
+            custom_claim,
             jwt_simple::prelude::Duration::from_mins(
                 SERVER_CONFIG.login_token_expiration_time_limit as u64,
             ),
@@ -48,11 +53,10 @@ impl TokenMeta {
         }
     }
 
-    pub async fn verify_token(token: &String) -> Result<JWTClaims<i64>, jwt_simple::Error> {
-        let token_meta = &TOKEN_META;
-        token_meta
+    pub async fn verify_token(token: &String) -> Result<JWTClaims<CustomClaim>, jwt_simple::Error> {
+        TOKEN_META
             .token_key
-            .verify_token::<i64>(token, token_meta.token_verification_options.clone())
+            .verify_token::<CustomClaim>(token, TOKEN_META.token_verification_options.clone())
     }
 }
 

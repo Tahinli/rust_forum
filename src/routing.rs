@@ -12,13 +12,14 @@ pub mod user_contact;
 
 use axum::{http::StatusCode, response::IntoResponse, routing::get, Router};
 use tower::limit::ConcurrencyLimitLayer;
-use tower_http::cors::CorsLayer;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 use crate::database;
 
 pub async fn route(concurrency_limit: &usize) -> Router {
     Router::new()
         .route("/", get(alive))
+        .nest("/logins", login::route())
         .nest("/roles", role::route())
         .nest("/users", user::route())
         .nest("/posts", post::route())
@@ -30,6 +31,7 @@ pub async fn route(concurrency_limit: &usize) -> Router {
         .nest("/user_contacts", user_contact::route())
         .layer(CorsLayer::permissive())
         .layer(ConcurrencyLimitLayer::new(*concurrency_limit))
+        .layer(TraceLayer::new_for_http())
 }
 
 pub async fn alive() -> impl IntoResponse {

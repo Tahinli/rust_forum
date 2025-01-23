@@ -7,7 +7,14 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::feature::{auth::OneTimePassword, login::Login};
+use crate::feature::{auth::OneTimePassword, login::Login, user::User, user_contact::UserContact};
+
+const CONTACT_EMAIL_DEFAULT_ID: i64 = 0;
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CreateOneTimePassword {
+    pub user_id: i64,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateLogin {
@@ -22,15 +29,34 @@ struct UpdateLogin {
 
 pub fn route() -> Router {
     Router::new()
+        .route("/one_time_password", post(create_one_time_password))
         .route("/", post(create))
-        .route("/users/:user_id/token/:token", get(read))
+        .route("/users/{user_id}/tokens/{token}", get(read))
         .route("/", patch(update))
-        .route("/users/:user_id/token/:token", delete(delete_))
-        .route("/users/:user_id", get(read_all_for_user))
-        .route("/users/:user_id", delete(delete_all_for_user))
-        .route("/count/users/:user_id", get(count_all_for_user))
+        .route("/users/{user_id}/tokens/{token}", delete(delete_))
+        .route("/users/{user_id}", get(read_all_for_user))
+        .route("/users/{user_id}", delete(delete_all_for_user))
+        .route("/count/users/{user_id}", get(count_all_for_user))
 }
-
+async fn create_one_time_password(
+    Json(create_one_time_password): Json<CreateOneTimePassword>,
+) -> impl IntoResponse {
+    //todo get user from middleware or something
+    let user = User::read(&create_one_time_password.user_id).await.unwrap();
+    match UserContact::read(&user.user_id, &CONTACT_EMAIL_DEFAULT_ID).await {
+        Ok(user_email) => match OneTimePassword::new(&user, &user_email.contact_value).await {
+            Ok(_) => (StatusCode::CREATED, Json(serde_json::json!(""))),
+            Err(err_val) => (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!(err_val.to_string())),
+            ),
+        },
+        Err(err_val) => (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!(err_val.to_string())),
+        ),
+    }
+}
 async fn create(Json(create_login): Json<CreateLogin>) -> impl IntoResponse {
     match OneTimePassword::verify(&create_login.one_time_password).await {
         true => match Login::create(&create_login.one_time_password.user_id).await {
@@ -59,8 +85,8 @@ async fn read(Path((user_id, token)): Path<(i64, String)>) -> impl IntoResponse 
     }
 }
 
-async fn update(Json(update_role): Json<UpdateLogin>) -> impl IntoResponse {
-    match Login::update(&update_role.user_id, &update_role.token).await {
+async fn update(Json(update_login): Json<UpdateLogin>) -> impl IntoResponse {
+    match Login::update(&update_login.user_id, &update_login.token).await {
         Ok(login) => (StatusCode::ACCEPTED, Json(serde_json::json!(login))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,

@@ -2,5 +2,6 @@
 CREATE TABLE IF NOT EXISTS "user_contact"(
     user_id BIGSERIAL NOT NULL REFERENCES "user"(user_id),
     contact_id BIGSERIAL NOT NULL REFERENCES "contact"(id),
+    contact_value VARCHAR(256) NOT NULL,
     PRIMARY KEY (user_id, contact_id)
 );

@@ -26,10 +26,10 @@ struct UpdateComment {
 pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
-        .route("/:creation_time", get(read))
+        .route("/{creation_time}", get(read))
         .route("/", patch(update))
-        .route("/:creation_time", delete(delete_))
-        .route("/posts/:post_creation_time", get(read_all_for_post))
+        .route("/{creation_time}", delete(delete_))
+        .route("/posts/{post_creation_time}", get(read_all_for_post))
 }
 
 async fn create(Json(create_comment): Json<CreateComment>) -> impl IntoResponse {

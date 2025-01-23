@@ -28,11 +28,11 @@ struct UpdateCommentInteraction {
 pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
-        .route("/:interaction_time", get(read))
+        .route("/{interaction_time}", get(read))
         .route("/", patch(update))
-        .route("/:interaction_time", delete(delete_))
+        .route("/{interaction_time}", delete(delete_))
         .route(
-            "/comments/:comment_creation_time",
+            "/comments/{comment_creation_time}",
             get(read_all_for_comment),
         )
 }

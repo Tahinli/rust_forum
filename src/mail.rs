@@ -66,7 +66,7 @@ impl MailTemplate {
             MailTemplate::OneTimePassword(mail_fields) => {
                 let mut mail_template_from_file =
                     naive_toml_parser(ONE_TIME_PASSWORD_MAIL_TEMPLATE_FILE_LOCATION);
-                if mail_template_from_file.0 == "one_time_password" {
+                if mail_template_from_file.0 == "[one_time_password]" {
                     let subject = match mail_template_from_file.1.pop_front() {
                         Some(subject) => subject,
                         None => return Err(ForumMailError::TemplateLackOfParameter),
@@ -106,7 +106,7 @@ async fn send_mail(
         )
         .to(format!("<{}>", receiver).parse().unwrap())
         .subject(subject)
-        .header(ContentType::TEXT_PLAIN)
+        .header(ContentType::TEXT_HTML)
         .body(body.to_owned())
         .unwrap();
 

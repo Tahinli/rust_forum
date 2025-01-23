@@ -33,14 +33,17 @@ async fn user_extraction(request: Request) -> Option<UserAndRequest> {
     if let Some(authorization_header) = request.headers().get(http::header::AUTHORIZATION) {
         if let Ok(authorization_header) = authorization_header.to_str() {
             if let Some((bearer, authorization_header)) = authorization_header.split_once(' ') {
-                if bearer == "bearer" {
-                    if let Ok(claims) =
-                        TokenMeta::verify_token(&authorization_header.to_string()).await
-                    {
-                        return Some(UserAndRequest {
-                            user: User::read(&claims.custom).await.ok()?,
-                            request,
-                        });
+                if bearer.to_lowercase() == "bearer" {
+                    match TokenMeta::verify_token(&authorization_header.to_string()).await {
+                        Ok(claims) => {
+                            return Some(UserAndRequest {
+                                user: User::read(&claims.custom.user_id).await.ok()?,
+                                request,
+                            });
+                        }
+                        Err(err_val) => {
+                            eprintln!("Verify Token | {}", err_val);
+                        }
                     }
                 }
             }

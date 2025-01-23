@@ -23,9 +23,9 @@ struct UpdateInteraction {
 pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
-        .route("/:id", get(read))
+        .route("/{id}", get(read))
         .route("/", patch(update))
-        .route("/:id", delete(delete_))
+        .route("/{id}", delete(delete_))
         .route("/", get(read_all))
 }
 

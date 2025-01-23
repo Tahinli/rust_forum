@@ -2,16 +2,21 @@ use crate::feature::user_contact::UserContact;
 
 use super::DATABASE_CONNECTIONS;
 
-pub async fn create(user_id: &i64, contact_id: &i64) -> Result<UserContact, sqlx::Error> {
+pub async fn create(
+    user_id: &i64,
+    contact_id: &i64,
+    contact_value: &String,
+) -> Result<UserContact, sqlx::Error> {
     sqlx::query_as!(
         UserContact,
         r#"
-            INSERT INTO "user_contact"(user_id, contact_id)
-            VALUES ($1, $2)
+            INSERT INTO "user_contact"(user_id, contact_id, contact_value)
+            VALUES ($1, $2, $3)
             RETURNING *
         "#,
         user_id,
         contact_id,
+        contact_value,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
@@ -24,21 +29,25 @@ pub async fn read(user_id: &i64, contact_id: &i64) -> Result<UserContact, sqlx::
             SELECT * FROM "user_contact" WHERE "user_id" = $1 AND "contact_id" = $2
         "#,
         user_id,
-        contact_id
+        contact_id,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn update(user_id: &i64, contact_id: &i64) -> Result<UserContact, sqlx::Error> {
+pub async fn update(
+    user_id: &i64,
+    contact_id: &i64,
+    contact_value: &String,
+) -> Result<UserContact, sqlx::Error> {
     sqlx::query_as!(
         UserContact,
         r#"
-        UPDATE "user_contact" SET "contact_id" = $2 WHERE "user_id" = $1
-        RETURNING *
+        UPDATE "user_contact" SET "contact_value" = $3 WHERE "user_id" = $1 AND "contact_id" = $2 RETURNING *
     "#,
         user_id,
         contact_id,
+        contact_value,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await

@@ -9,8 +9,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::feature::role::Role;
 
-use super::middleware;
-
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateRole {
     name: String,
@@ -25,15 +23,10 @@ struct UpdateRole {
 pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
-        .route_layer(axum::middleware::from_fn(middleware::pass_builder_or_admin))
-        .route("/:id", get(read))
-        .route_layer(axum::middleware::from_fn(middleware::pass))
+        .route("/{id}", get(read))
         .route("/", patch(update))
-        .route_layer(axum::middleware::from_fn(middleware::pass_builder_or_admin))
-        .route("/:id", delete(delete_))
-        .route_layer(axum::middleware::from_fn(middleware::pass_builder_or_admin))
+        .route("/{id}", delete(delete_))
         .route("/", get(read_all))
-        .route_layer(axum::middleware::from_fn(middleware::pass))
 }
 
 async fn create(Json(create_role): Json<CreateRole>) -> impl IntoResponse {

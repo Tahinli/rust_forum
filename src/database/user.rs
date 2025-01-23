@@ -13,15 +13,14 @@ pub async fn create(
     sqlx::query_as!(
         User,
         r#"
-            INSERT INTO "user"(name, surname, gender, birth_date, role_id)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO "user"(name, surname, gender, birth_date)
+            VALUES ($1, $2, $3, $4)
             RETURNING *
         "#,
         name,
         surname,
         gender,
         birth_date,
-        2
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await

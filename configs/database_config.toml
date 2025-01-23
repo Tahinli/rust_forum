@@ -4,4 +4,5 @@ username = "root"
 password = "root"
 database = "rust_forum"
 backend = "postgres"
-connection_pool_size = "100"
+connection_pool_size = 100
+default_user_role_id = 10

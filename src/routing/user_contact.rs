@@ -13,28 +13,31 @@ use crate::feature::user_contact::UserContact;
 struct CreateUserContact {
     pub user_id: i64,
     pub contact_id: i64,
+    pub contact_value: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct UpdateUserContact {
     pub user_id: i64,
     pub contact_id: i64,
+    pub contact_value: String,
 }
 
 pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
-        .route("/roles/:user_id/contacts/:contact_id", get(read))
+        .route("/roles/{user_id}/contacts/{contact_id}", get(read))
         .route("/", patch(update))
-        .route("/roles/:user_id/contacts/:contact_id", delete(delete_))
-        .route("/users/:user_id", get(read_all_for_user))
-        .route("/users/:user_id", delete(delete_all_for_user))
+        .route("/roles/{user_id}/contacts/{contact_id}", delete(delete_))
+        .route("/users/{user_id}", get(read_all_for_user))
+        .route("/users/{user_id}", delete(delete_all_for_user))
 }
 
 async fn create(Json(create_user_contact): Json<CreateUserContact>) -> impl IntoResponse {
     match UserContact::create(
         &create_user_contact.user_id,
         &create_user_contact.contact_id,
+        &create_user_contact.contact_value,
     )
     .await
     {
@@ -56,8 +59,14 @@ async fn read(Path((user_id, contact_id)): Path<(i64, i64)>) -> impl IntoRespons
     }
 }
 
-async fn update(Json(update_role): Json<UpdateUserContact>) -> impl IntoResponse {
-    match UserContact::update(&update_role.user_id, &update_role.contact_id).await {
+async fn update(Json(update_user_contact): Json<UpdateUserContact>) -> impl IntoResponse {
+    match UserContact::update(
+        &update_user_contact.user_id,
+        &update_user_contact.contact_id,
+        &update_user_contact.contact_value,
+    )
+    .await
+    {
         Ok(user_contact) => (StatusCode::ACCEPTED, Json(serde_json::json!(user_contact))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,

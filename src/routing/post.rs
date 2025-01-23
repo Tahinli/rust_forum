@@ -26,9 +26,9 @@ struct UpdatePost {
 pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
-        .route("/:creation_time", get(read))
+        .route("/{creation_time}", get(read))
         .route("/", patch(update))
-        .route("/:creation_time", delete(delete_))
+        .route("/{creation_time}", delete(delete_))
         .route("/", get(read_all))
 }
 
