@@ -3,10 +3,11 @@ use std::sync::Arc;
 use axum::{
     body::{to_bytes, Body},
     extract::Request,
-    http::{self, Method, StatusCode},
+    http::{self, HeaderMap, Method, StatusCode},
     middleware::Next,
     response::IntoResponse,
 };
+use serde::{Deserialize, Serialize};
 
 use crate::feature::{login::TokenMeta, user::User};
 
@@ -29,23 +30,36 @@ struct UserAndTargetUserAndRequest {
     request: Request,
 }
 
-async fn user_extraction(request: Request) -> Option<UserAndRequest> {
-    if let Some(authorization_header) = request.headers().get(http::header::AUTHORIZATION) {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserAndToken {
+    pub user: User,
+    pub token: String,
+}
+
+async fn authorization_token_extraction(request_headers: &HeaderMap) -> Option<String> {
+    if let Some(authorization_header) = request_headers.get(http::header::AUTHORIZATION) {
         if let Ok(authorization_header) = authorization_header.to_str() {
-            if let Some((bearer, authorization_header)) = authorization_header.split_once(' ') {
+            if let Some((bearer, authorization_token)) = authorization_header.split_once(' ') {
                 if bearer.to_lowercase() == "bearer" {
-                    match TokenMeta::verify_token(&authorization_header.to_string()).await {
-                        Ok(claims) => {
-                            return Some(UserAndRequest {
-                                user: User::read(&claims.custom.user_id).await.ok()?,
-                                request,
-                            });
-                        }
-                        Err(err_val) => {
-                            eprintln!("Verify Token | {}", err_val);
-                        }
-                    }
+                    return Some(authorization_token.to_owned());
                 }
+            }
+        }
+    }
+    None
+}
+
+async fn user_extraction(request: Request) -> Option<UserAndRequest> {
+    if let Some(authorization_token) = authorization_token_extraction(&request.headers()).await {
+        match TokenMeta::verify_token(&authorization_token.to_string()).await {
+            Ok(claims) => {
+                return Some(UserAndRequest {
+                    user: User::read(&claims.custom.user_id).await.ok()?,
+                    request,
+                });
+            }
+            Err(err_val) => {
+                eprintln!("Verify Token | {}", err_val);
             }
         }
     }
@@ -208,6 +222,20 @@ pub async fn pass_higher_or_self(
             let user = Arc::new(user);
             request.extensions_mut().insert(user);
 
+            return Ok(next.run(request).await);
+        }
+    }
+    Err(StatusCode::FORBIDDEN)
+}
+
+pub async fn user_and_token(request: Request, next: Next) -> Result<impl IntoResponse, StatusCode> {
+    if let Some(token) = authorization_token_extraction(&request.headers()).await {
+        if let Some(user_and_request) = user_extraction(request).await {
+            let user = user_and_request.user;
+            let mut request = user_and_request.request;
+            let user_and_token = Arc::new(UserAndToken { user, token });
+
+            request.extensions_mut().insert(user_and_token);
             return Ok(next.run(request).await);
         }
     }

@@ -22,7 +22,7 @@ struct CreateUser {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct UpdateUser {
-    id: i64,
+    user_id: i64,
     name: String,
     surname: String,
     gender: bool,
@@ -34,7 +34,7 @@ pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
         .route(
-            "/{id}",
+            "/{user_id}",
             get(read).route_layer(axum::middleware::from_fn(middleware::pass)),
         )
         .route(
@@ -42,7 +42,7 @@ pub fn route() -> Router {
             patch(update).route_layer(axum::middleware::from_fn(middleware::pass_higher_or_self)),
         )
         .route(
-            "/{id}",
+            "/{user_id}",
             delete(delete_).route_layer(axum::middleware::from_fn(middleware::pass_higher_or_self)),
         )
         .route(
@@ -54,15 +54,18 @@ pub fn route() -> Router {
         .route("/birth_dates/{birth_date}", get(read_all_for_birth_date))
         .route("/roles/{role}", get(read_all_for_role))
         .route("/genders/{gender}", get(read_all_for_gender))
-        .route("/ids", get(read_all_id))
-        .route("/ids/names/{name}", get(read_all_id_for_name))
-        .route("/ids/surnames/{surname}", get(read_all_id_for_surname))
+        .route("/users_ids", get(read_all_id))
+        .route("/users_ids/names/{name}", get(read_all_id_for_name))
         .route(
-            "/ids/birth_dates/{birth_date}",
+            "/users_ids/surnames/{surname}",
+            get(read_all_id_for_surname),
+        )
+        .route(
+            "/users_ids/birth_dates/{birth_date}",
             get(read_all_id_for_birth_date),
         )
-        .route("/ids/roles/{role}", get(read_all_id_for_role))
-        .route("/ids/genders/{gender}", get(read_all_id_for_gender))
+        .route("/users_ids/roles/{role}", get(read_all_id_for_role))
+        .route("/users_ids/genders/{gender}", get(read_all_id_for_gender))
         .route("/count", get(count_all))
         .route("/count/names/{name}", get(count_all_for_name))
         .route("/count/surnames/{surname}", get(count_all_for_surname))
@@ -91,8 +94,8 @@ async fn create(Json(create_user): Json<CreateUser>) -> impl IntoResponse {
     }
 }
 
-async fn read(Path(id): Path<i64>) -> impl IntoResponse {
-    match User::read(&id).await {
+async fn read(Path(user_id): Path<i64>) -> impl IntoResponse {
+    match User::read(&user_id).await {
         Ok(user) => (StatusCode::OK, Json(serde_json::json!(user))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -103,7 +106,7 @@ async fn read(Path(id): Path<i64>) -> impl IntoResponse {
 
 async fn update(Json(update_user): Json<UpdateUser>) -> impl IntoResponse {
     match User::update(
-        &update_user.id,
+        &update_user.user_id,
         &update_user.name,
         &update_user.surname,
         &update_user.gender,
@@ -120,8 +123,8 @@ async fn update(Json(update_user): Json<UpdateUser>) -> impl IntoResponse {
     }
 }
 
-async fn delete_(Path(id): Path<i64>) -> impl IntoResponse {
-    match User::delete(&id).await {
+async fn delete_(Path(user_id): Path<i64>) -> impl IntoResponse {
+    match User::delete(&user_id).await {
         Ok(user) => (StatusCode::NO_CONTENT, Json(serde_json::json!(user))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
