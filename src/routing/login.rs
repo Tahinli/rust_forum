@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::feature::{auth::OneTimePassword, login::Login, user::User, user_contact::UserContact};
 
-use super::middleware::{self, UserAndToken};
+use super::middleware::{self, UserAndAuthorizationToken};
 
 const CONTACT_EMAIL_DEFAULT_ID: i64 = 0;
 
@@ -92,8 +92,15 @@ async fn read(Path((user_id, token)): Path<(i64, String)>) -> impl IntoResponse 
     }
 }
 
-async fn update(Extension(user_and_token): Extension<Arc<UserAndToken>>) -> impl IntoResponse {
-    match Login::update(&user_and_token.user.user_id, &user_and_token.token).await {
+async fn update(
+    Extension(user_and_authorization_token): Extension<Arc<UserAndAuthorizationToken>>,
+) -> impl IntoResponse {
+    match Login::update(
+        &user_and_authorization_token.user.user_id,
+        &user_and_authorization_token.authorization_token,
+    )
+    .await
+    {
         Ok(login) => (StatusCode::ACCEPTED, Json(serde_json::json!(login))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,

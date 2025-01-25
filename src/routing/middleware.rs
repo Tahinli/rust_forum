@@ -1,154 +1,142 @@
 use std::sync::Arc;
 
 use axum::{
-    body::{to_bytes, Body},
     extract::Request,
-    http::{self, HeaderMap, Method, StatusCode},
+    http::{self, HeaderMap, StatusCode, Uri},
     middleware::Next,
     response::IntoResponse,
 };
 use serde::{Deserialize, Serialize};
 
-use crate::feature::{login::TokenMeta, user::User};
+use crate::{
+    error::ForumAuthError,
+    feature::{login::TokenMeta, user::User},
+};
 
-#[derive(Debug)]
-struct UserAndRequest {
-    user: User,
-    request: Request,
-}
-
-#[derive(Debug)]
-struct TargetUserAndRequest {
-    target_user: User,
-    request: Request,
-}
-
-#[derive(Debug)]
-struct UserAndTargetUserAndRequest {
+#[derive(Debug, Serialize, Deserialize)]
+struct UserAndTargetUser {
     user: User,
     target_user: User,
-    request: Request,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct UserAndToken {
+pub struct UserAndAuthorizationToken {
     pub user: User,
-    pub token: String,
+    pub authorization_token: String,
 }
 
-async fn authorization_token_extraction(request_headers: &HeaderMap) -> Option<String> {
+async fn authorization_token_extraction(
+    request_headers: &HeaderMap,
+) -> Result<String, ForumAuthError> {
     if let Some(authorization_header) = request_headers.get(http::header::AUTHORIZATION) {
         if let Ok(authorization_header) = authorization_header.to_str() {
             if let Some((bearer, authorization_token)) = authorization_header.split_once(' ') {
                 if bearer.to_lowercase() == "bearer" {
-                    return Some(authorization_token.to_owned());
+                    return Ok(authorization_token.to_owned());
                 }
             }
         }
     }
-    None
+    Err(ForumAuthError::AuthenticationFailed("".to_owned()))
 }
 
-async fn user_extraction(request: Request) -> Option<UserAndRequest> {
-    if let Some(authorization_token) = authorization_token_extraction(&request.headers()).await {
-        match TokenMeta::verify_token(&authorization_token.to_string()).await {
-            Ok(claims) => {
-                return Some(UserAndRequest {
-                    user: User::read(&claims.custom.user_id).await.ok()?,
-                    request,
-                });
-            }
-            Err(err_val) => {
-                eprintln!("Verify Token | {}", err_val);
-            }
-        }
+async fn user_extraction_from_authorization_token(
+    authorization_token: &String,
+) -> Result<User, ForumAuthError> {
+    match TokenMeta::verify_token(&authorization_token.to_string()).await {
+        Ok(claims) => User::read(&claims.custom.user_id)
+            .await
+            .map_err(|err_val| ForumAuthError::AuthenticationFailed(err_val.to_string())),
+        Err(err_val) => Err(ForumAuthError::AuthenticationFailed(err_val.to_string())),
     }
-    None
 }
 
-async fn target_user_extraction_from_uri(request: Request) -> Option<TargetUserAndRequest> {
-    let uri_parts = request.uri().path().split('/').collect::<Vec<&str>>();
-    for (index, uri_part) in uri_parts.iter().enumerate() {
+async fn user_extraction_from_header(request_headers: &HeaderMap) -> Result<User, ForumAuthError> {
+    match authorization_token_extraction(request_headers).await {
+        Ok(authorization_token) => {
+            user_extraction_from_authorization_token(&authorization_token).await
+        }
+        Err(err_val) => Err(err_val),
+    }
+}
+
+async fn user_extraction_from_uri(request_uri: &Uri) -> Result<User, ForumAuthError> {
+    let request_uri_parts = request_uri.path().split('/').collect::<Vec<&str>>();
+    for (index, uri_part) in request_uri_parts.iter().enumerate() {
         if *uri_part == "users" {
-            if let Some(target_user_id) = uri_parts.get(index) {
-                if let Ok(target_user_id) = (*target_user_id).parse::<i64>() {
-                    if let Ok(target_user) = User::read(&target_user_id).await {
-                        return Some(TargetUserAndRequest {
-                            target_user,
-                            request,
-                        });
-                    }
+            if let Some(user_id) = request_uri_parts.get(index) {
+                if let Ok(user_id) = (*user_id).parse::<i64>() {
+                    User::read(&user_id).await.map_err(|err_val| {
+                        ForumAuthError::AuthenticationFailed(err_val.to_string())
+                    })?;
                 }
             }
         }
     }
-    None
+    Err(ForumAuthError::AuthenticationFailed("".to_owned()))
 }
 
-async fn target_user_extraction_from_json(request: Request) -> Option<TargetUserAndRequest> {
-    let (parts, body) = request.into_parts();
-    let bytes = to_bytes(body, usize::MAX).await.ok()?;
-    let json: serde_json::Value = serde_json::from_slice(&bytes).ok()?;
+async fn user_from_header_and_target_user_from_uri_extraction(
+    request_headers: &HeaderMap,
+    request_uri: &Uri,
+) -> Result<UserAndTargetUser, ForumAuthError> {
+    let user = user_extraction_from_header(request_headers).await?;
+    let target_user = user_extraction_from_uri(request_uri).await?;
 
-    let body = Body::from(json.to_string());
-    let request = Request::from_parts(parts, body);
+    Ok(UserAndTargetUser { user, target_user })
+}
 
-    if let Some(target_user_id) = json.get("user_id") {
-        if target_user_id.is_i64() {
-            if let Some(target_user_id) = target_user_id.as_i64() {
-                if let Ok(target_user) = User::read(&target_user_id).await {
-                    return Some(TargetUserAndRequest {
-                        target_user,
-                        request,
-                    });
-                }
-            }
+pub async fn user_and_token(
+    mut request: Request,
+    next: Next,
+) -> Result<impl IntoResponse, StatusCode> {
+    if let Ok(authorization_token) = authorization_token_extraction(&request.headers()).await {
+        if let Ok(user) = user_extraction_from_authorization_token(&authorization_token).await {
+            let user_and_token = Arc::new(UserAndAuthorizationToken {
+                user,
+                authorization_token,
+            });
+
+            request.extensions_mut().insert(user_and_token);
+            return Ok(next.run(request).await);
         }
     }
-
-    None
+    Err(StatusCode::FORBIDDEN)
 }
 
-async fn user_and_target_user_extraction(request: Request) -> Option<UserAndTargetUserAndRequest> {
-    let user_and_request = user_extraction(request).await?;
-    let user = user_and_request.user;
-    let request = user_and_request.request;
-
-    let target_user_and_request = if request.method() == Method::GET {
-        target_user_extraction_from_uri(request).await
-    } else {
-        target_user_extraction_from_json(request).await
-    }?;
-
-    let target_user = target_user_and_request.target_user;
-    let request = target_user_and_request.request;
-
-    Some(UserAndTargetUserAndRequest {
-        user,
-        target_user,
-        request,
-    })
-}
-
-pub async fn pass(request: Request, next: Next) -> Result<impl IntoResponse, StatusCode> {
-    match user_extraction(request).await {
-        Some(user_and_request) => {
-            let user = Arc::new(user_and_request.user);
-            let mut request = user_and_request.request;
-
+pub async fn pass_by_authorization_token(
+    mut request: Request,
+    next: Next,
+) -> Result<impl IntoResponse, StatusCode> {
+    match user_extraction_from_header(request.headers()).await {
+        Ok(user) => {
+            let user = Arc::new(user);
             request.extensions_mut().insert(user);
 
             Ok(next.run(request).await)
         }
-        None => Err(StatusCode::FORBIDDEN),
+        Err(_) => Err(StatusCode::FORBIDDEN),
     }
 }
 
-pub async fn pass_builder(request: Request, next: Next) -> Result<impl IntoResponse, StatusCode> {
-    if let Some(user_and_request) = user_extraction(request).await {
-        let user = user_and_request.user;
-        let mut request = user_and_request.request;
+pub async fn pass_by_uri_user_extraction(
+    mut request: Request,
+    next: Next,
+) -> Result<impl IntoResponse, StatusCode> {
+    if let Ok(target_user) = user_extraction_from_uri(request.uri()).await {
+        let target_user = Arc::new(target_user);
+        request.extensions_mut().insert(target_user);
 
+        return Ok(next.run(request).await);
+    }
+    Err(StatusCode::BAD_REQUEST)
+}
+
+pub async fn pass_builder_by_authorization_token(
+    mut request: Request,
+    next: Next,
+) -> Result<impl IntoResponse, StatusCode> {
+    if let Ok(user) = user_extraction_from_header(request.headers()).await {
         if User::is_builder(&user).await {
             let user = Arc::new(user);
             request.extensions_mut().insert(user);
@@ -159,14 +147,11 @@ pub async fn pass_builder(request: Request, next: Next) -> Result<impl IntoRespo
     Err(StatusCode::FORBIDDEN)
 }
 
-pub async fn pass_builder_or_admin(
-    request: Request,
+pub async fn pass_builder_or_admin_by_authorization_token(
+    mut request: Request,
     next: Next,
 ) -> Result<impl IntoResponse, StatusCode> {
-    if let Some(user_and_request) = user_extraction(request).await {
-        let user = user_and_request.user;
-        let mut request = user_and_request.request;
-
+    if let Ok(user) = user_extraction_from_header(request.headers()).await {
         if User::is_builder_or_admin(&user).await {
             let user = Arc::new(user);
             request.extensions_mut().insert(user);
@@ -177,50 +162,19 @@ pub async fn pass_builder_or_admin(
     Err(StatusCode::FORBIDDEN)
 }
 
-pub async fn pass_self(request: Request, next: Next) -> Result<impl IntoResponse, StatusCode> {
-    if let Some(user_and_target_user_and_request) = user_and_target_user_extraction(request).await {
-        let user = user_and_target_user_and_request.user;
-        let target_user = user_and_target_user_and_request.target_user;
-        let mut request = user_and_target_user_and_request.request;
-
-        if User::is_self(&user, &target_user).await {
-            let user = Arc::new(user);
-            request.extensions_mut().insert(user);
-
-            return Ok(next.run(request).await);
-        }
-    }
-    Err(StatusCode::FORBIDDEN)
-}
-
-pub async fn pass_higher(request: Request, next: Next) -> Result<impl IntoResponse, StatusCode> {
-    if let Some(user_and_target_user_and_request) = user_and_target_user_extraction(request).await {
-        let user = user_and_target_user_and_request.user;
-        let target_user = user_and_target_user_and_request.target_user;
-        let mut request = user_and_target_user_and_request.request;
-
-        if User::is_higher(&user, &target_user).await {
-            let user = Arc::new(user);
-            request.extensions_mut().insert(user);
-
-            return Ok(next.run(request).await);
-        }
-    }
-    Err(StatusCode::FORBIDDEN)
-}
-
-pub async fn pass_higher_or_self(
-    request: Request,
+pub async fn pass_builder_by_authorization_token_with_target_user_by_request_uri(
+    mut request: Request,
     next: Next,
 ) -> Result<impl IntoResponse, StatusCode> {
-    if let Some(user_and_target_user_and_request) = user_and_target_user_extraction(request).await {
-        let user = user_and_target_user_and_request.user;
-        let target_user = user_and_target_user_and_request.target_user;
-        let mut request = user_and_target_user_and_request.request;
+    if let Ok(user_and_target_user) =
+        user_from_header_and_target_user_from_uri_extraction(request.headers(), request.uri()).await
+    {
+        let user = user_and_target_user.user;
+        let target_user = user_and_target_user.target_user;
 
-        if User::is_higher_or_self(&user, &target_user).await {
-            let user = Arc::new(user);
-            request.extensions_mut().insert(user);
+        if User::is_builder(&user).await {
+            let target_user = Arc::new(target_user);
+            request.extensions_mut().insert(target_user);
 
             return Ok(next.run(request).await);
         }
@@ -228,14 +182,20 @@ pub async fn pass_higher_or_self(
     Err(StatusCode::FORBIDDEN)
 }
 
-pub async fn user_and_token(request: Request, next: Next) -> Result<impl IntoResponse, StatusCode> {
-    if let Some(token) = authorization_token_extraction(&request.headers()).await {
-        if let Some(user_and_request) = user_extraction(request).await {
-            let user = user_and_request.user;
-            let mut request = user_and_request.request;
-            let user_and_token = Arc::new(UserAndToken { user, token });
+pub async fn pass_builder_or_admin_by_authorization_token_with_target_user_by_request_uri(
+    mut request: Request,
+    next: Next,
+) -> Result<impl IntoResponse, StatusCode> {
+    if let Ok(user_and_target_user) =
+        user_from_header_and_target_user_from_uri_extraction(request.headers(), request.uri()).await
+    {
+        let user = user_and_target_user.user;
+        let target_user = user_and_target_user.target_user;
 
-            request.extensions_mut().insert(user_and_token);
+        if User::is_builder_or_admin(&user).await {
+            let target_user = Arc::new(target_user);
+            request.extensions_mut().insert(target_user);
+
             return Ok(next.run(request).await);
         }
     }

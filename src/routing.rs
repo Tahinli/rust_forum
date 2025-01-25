@@ -1,3 +1,4 @@
+pub mod admin;
 pub mod comment;
 pub mod comment_interaction;
 pub mod contact;
@@ -29,6 +30,7 @@ pub async fn route(concurrency_limit: &usize) -> Router {
         .nest("/comment_interactions", comment_interaction::route())
         .nest("/contacts", contact::route())
         .nest("/user_contacts", user_contact::route())
+        .nest("/admin", admin::route())
         .layer(CorsLayer::permissive())
         .layer(ConcurrencyLimitLayer::new(*concurrency_limit))
         .layer(TraceLayer::new_for_http())

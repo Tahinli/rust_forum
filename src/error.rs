@@ -41,7 +41,7 @@ impl std::fmt::Display for ForumMailError {
             ForumMailError::TemplateLackOfParameter => {
                 write!(f, "Template Parameters Are Not Enough")
             }
-            ForumMailError::Send(error) => write!(f, "Sending | {}", error),
+            ForumMailError::Send(err_val) => write!(f, "Sending | {}", err_val),
         }
     }
 }
@@ -54,12 +54,16 @@ impl std::error::Error for ForumMailError {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ForumAuthError {
+    AuthenticationFailed(String),
     TokenRefreshTimeOver,
 }
 
 impl std::fmt::Display for ForumAuthError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            ForumAuthError::AuthenticationFailed(err_val) => {
+                write!(f, "Authentication Failed | {}", err_val)
+            }
             ForumAuthError::TokenRefreshTimeOver => write!(f, "Token Refresh Time is Over"),
         }
     }

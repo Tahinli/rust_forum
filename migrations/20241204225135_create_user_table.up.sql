@@ -8,3 +8,12 @@ CREATE TABLE IF NOT EXISTS "user"(
     role_id BIGINT NOT NULL REFERENCES "role" DEFAULT 10,
     creation_time TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+INSERT INTO "user"(user_id, name, surname, gender, birth_date, role_id)
+VALUES (0, 'Builder', 'Builder', true, NOW(), 0)
+ON CONFLICT(user_id) DO UPDATE SET
+"name" = 'Builder',
+"surname" = 'Builder',
+"gender" = true,
+"birth_date" = NOW(),
+"role_id" = 0;
