@@ -12,6 +12,7 @@ pub mod user;
 pub mod user_contact;
 
 use axum::{http::StatusCode, response::IntoResponse, routing::get, Router};
+use middleware::by_authorization_token;
 use tower::limit::ConcurrencyLimitLayer;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
@@ -31,6 +32,8 @@ pub async fn route(concurrency_limit: &usize) -> Router {
         .nest("/contacts", contact::route())
         .nest("/user_contacts", user_contact::route())
         .nest("/admin", admin::route())
+        // todo just for beta I think
+        .route_layer(axum::middleware::from_fn(by_authorization_token))
         .layer(CorsLayer::permissive())
         .layer(ConcurrencyLimitLayer::new(*concurrency_limit))
         .layer(TraceLayer::new_for_http())

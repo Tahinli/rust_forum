@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::feature::{auth::OneTimePassword, login::Login, user::User, user_contact::UserContact};
 
-use super::middleware::{self, UserAndAuthorizationToken};
+use super::middleware::{user_and_token_then_insert, UserAndAuthorizationToken};
 
 const CONTACT_EMAIL_DEFAULT_ID: i64 = 0;
 
@@ -33,7 +33,7 @@ pub fn route() -> Router {
         .route("/users/{user_id}/tokens/{token}", get(read))
         .route(
             "/",
-            patch(update).route_layer(axum::middleware::from_fn(middleware::user_and_token)),
+            patch(update).route_layer(axum::middleware::from_fn(user_and_token_then_insert)),
         )
         .route("/users/{user_id}/tokens/{token}", delete(delete_))
         .route("/users/{user_id}", get(read_all_for_user))
@@ -45,7 +45,7 @@ async fn create_one_time_password(
 ) -> impl IntoResponse {
     //todo get user from middleware or something
     let user = User::read(&create_one_time_password.user_id).await.unwrap();
-    match UserContact::read(&user.user_id, &CONTACT_EMAIL_DEFAULT_ID).await {
+    match UserContact::read(&user, &CONTACT_EMAIL_DEFAULT_ID).await {
         Ok(user_email) => match OneTimePassword::new(&user, &user_email.contact_value).await {
             Ok(_) => (StatusCode::CREATED, Json(serde_json::json!(""))),
             Err(err_val) => (

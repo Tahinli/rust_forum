@@ -2,17 +2,12 @@ use axum::{
     extract::Path,
     http::StatusCode,
     response::IntoResponse,
-    routing::{delete, patch, post},
+    routing::{delete, patch},
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::feature::role::Role;
-
-#[derive(Debug, Serialize, Deserialize)]
-struct CreateRole {
-    name: String,
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct UpdateRole {
@@ -22,19 +17,8 @@ struct UpdateRole {
 
 pub fn route() -> Router {
     Router::new()
-        .route("/", post(create))
         .route("/", patch(update))
         .route("/{id}", delete(delete_))
-}
-
-async fn create(Json(create_role): Json<CreateRole>) -> impl IntoResponse {
-    match Role::create(&create_role.name).await {
-        Ok(role) => (StatusCode::CREATED, Json(serde_json::json!(role))),
-        Err(err_val) => (
-            StatusCode::BAD_REQUEST,
-            Json(serde_json::json!(err_val.to_string())),
-        ),
-    }
 }
 
 async fn update(Json(update_role): Json<UpdateRole>) -> impl IntoResponse {

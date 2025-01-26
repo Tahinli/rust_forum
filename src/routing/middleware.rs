@@ -86,7 +86,7 @@ async fn user_from_header_and_target_user_from_uri_extraction(
     Ok(UserAndTargetUser { user, target_user })
 }
 
-pub async fn user_and_token(
+pub async fn user_and_token_then_insert(
     mut request: Request,
     next: Next,
 ) -> Result<impl IntoResponse, StatusCode> {
@@ -104,7 +104,17 @@ pub async fn user_and_token(
     Err(StatusCode::FORBIDDEN)
 }
 
-pub async fn pass_by_authorization_token(
+pub async fn by_authorization_token(
+    request: Request,
+    next: Next,
+) -> Result<impl IntoResponse, StatusCode> {
+    match user_extraction_from_header(request.headers()).await {
+        Ok(_) => Ok(next.run(request).await),
+        Err(_) => Err(StatusCode::FORBIDDEN),
+    }
+}
+
+pub async fn by_authorization_token_then_insert(
     mut request: Request,
     next: Next,
 ) -> Result<impl IntoResponse, StatusCode> {
@@ -119,7 +129,7 @@ pub async fn pass_by_authorization_token(
     }
 }
 
-pub async fn pass_by_uri_user_extraction(
+pub async fn by_uri_then_insert(
     mut request: Request,
     next: Next,
 ) -> Result<impl IntoResponse, StatusCode> {
@@ -132,7 +142,19 @@ pub async fn pass_by_uri_user_extraction(
     Err(StatusCode::BAD_REQUEST)
 }
 
-pub async fn pass_builder_by_authorization_token(
+pub async fn builder_by_authorization_token(
+    request: Request,
+    next: Next,
+) -> Result<impl IntoResponse, StatusCode> {
+    if let Ok(user) = user_extraction_from_header(request.headers()).await {
+        if User::is_builder(&user).await {
+            return Ok(next.run(request).await);
+        }
+    }
+    Err(StatusCode::FORBIDDEN)
+}
+
+pub async fn builder_by_authorization_token_then_insert(
     mut request: Request,
     next: Next,
 ) -> Result<impl IntoResponse, StatusCode> {
@@ -147,7 +169,19 @@ pub async fn pass_builder_by_authorization_token(
     Err(StatusCode::FORBIDDEN)
 }
 
-pub async fn pass_builder_or_admin_by_authorization_token(
+pub async fn builder_or_admin_by_authorization_token(
+    request: Request,
+    next: Next,
+) -> Result<impl IntoResponse, StatusCode> {
+    if let Ok(user) = user_extraction_from_header(request.headers()).await {
+        if User::is_builder_or_admin(&user).await {
+            return Ok(next.run(request).await);
+        }
+    }
+    Err(StatusCode::FORBIDDEN)
+}
+
+pub async fn builder_or_admin_by_authorization_token_then_insert(
     mut request: Request,
     next: Next,
 ) -> Result<impl IntoResponse, StatusCode> {
@@ -162,7 +196,7 @@ pub async fn pass_builder_or_admin_by_authorization_token(
     Err(StatusCode::FORBIDDEN)
 }
 
-pub async fn pass_builder_by_authorization_token_with_target_user_by_request_uri(
+pub async fn builder_by_authorization_token_and_target_user_by_uri_then_insert_target(
     mut request: Request,
     next: Next,
 ) -> Result<impl IntoResponse, StatusCode> {
@@ -172,7 +206,7 @@ pub async fn pass_builder_by_authorization_token_with_target_user_by_request_uri
         let user = user_and_target_user.user;
         let target_user = user_and_target_user.target_user;
 
-        if User::is_builder(&user).await {
+        if user.is_builder().await && user.is_default(&target_user).await {
             let target_user = Arc::new(target_user);
             request.extensions_mut().insert(target_user);
 
@@ -182,7 +216,7 @@ pub async fn pass_builder_by_authorization_token_with_target_user_by_request_uri
     Err(StatusCode::FORBIDDEN)
 }
 
-pub async fn pass_builder_or_admin_by_authorization_token_with_target_user_by_request_uri(
+pub async fn builder_or_admin_by_authorization_token_and_target_user_by_uri_then_insert_target(
     mut request: Request,
     next: Next,
 ) -> Result<impl IntoResponse, StatusCode> {
@@ -192,7 +226,7 @@ pub async fn pass_builder_or_admin_by_authorization_token_with_target_user_by_re
         let user = user_and_target_user.user;
         let target_user = user_and_target_user.target_user;
 
-        if User::is_builder_or_admin(&user).await {
+        if user.is_default(&target_user).await {
             let target_user = Arc::new(target_user);
             request.extensions_mut().insert(target_user);
 

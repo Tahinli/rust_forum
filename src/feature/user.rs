@@ -124,49 +124,25 @@ impl User {
         user::count_all_for_gender(gender).await
     }
 
-    pub async fn is_builder(user: &User) -> bool {
-        if user.role_id == 0 {
+    async fn is_normal(&self) -> bool {
+        if self.role_id == 0 {
             true
         } else {
             false
         }
     }
 
-    pub async fn is_admin(user: &User) -> bool {
-        if user.role_id == 1 {
+    async fn is_same_level(&self, target_user: &User) -> bool {
+        if self.role_id == target_user.role_id {
             true
         } else {
             false
         }
     }
 
-    pub async fn is_banned(user: &User) -> bool {
-        if user.role_id == -1 {
-            true
-        } else {
-            false
-        }
-    }
-
-    pub async fn is_builder_or_admin(user: &User) -> bool {
-        if user.role_id == 0 || user.role_id == 1 {
-            true
-        } else {
-            false
-        }
-    }
-
-    pub async fn is_self(user: &User, target_user: &User) -> bool {
-        if user.user_id == target_user.user_id {
-            true
-        } else {
-            false
-        }
-    }
-
-    pub async fn is_higher(user: &User, target_user: &User) -> bool {
-        if user.user_id >= 0 {
-            if user.user_id < target_user.user_id {
+    async fn is_higher(&self, target_user: &User) -> bool {
+        if self.user_id >= 0 {
+            if self.user_id < target_user.user_id {
                 return true;
             }
         }
@@ -174,11 +150,55 @@ impl User {
         false
     }
 
-    pub async fn is_higher_or_self(user: &User, target_user: &User) -> bool {
-        if User::is_self(user, target_user).await {
+    pub async fn is_builder(&self) -> bool {
+        if self.role_id == 0 {
             true
         } else {
-            User::is_higher(user, target_user).await
+            false
+        }
+    }
+
+    pub async fn is_admin(&self) -> bool {
+        if self.role_id == 1 {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub async fn is_banned(&self) -> bool {
+        if self.role_id == -1 {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub async fn is_builder_or_admin(&self) -> bool {
+        if self.role_id == 0 || self.role_id == 1 {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub async fn is_default(&self, target_user: &User) -> bool {
+        if self.is_banned().await {
+            false
+        } else {
+            if self.is_normal().await {
+                false
+            } else {
+                if self.is_same_level(target_user).await {
+                    true
+                } else {
+                    if self.is_higher(target_user).await {
+                        true
+                    } else {
+                        false
+                    }
+                }
+            }
         }
     }
 }

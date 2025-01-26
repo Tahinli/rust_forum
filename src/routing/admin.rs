@@ -1,15 +1,19 @@
+pub mod contact;
 pub mod role;
 pub mod user;
+pub mod user_contact;
 
 use axum::Router;
 
-use super::middleware::pass_builder_or_admin_by_authorization_token;
+use super::middleware::builder_or_admin_by_authorization_token;
 
 pub fn route() -> Router {
     Router::new()
         .nest("/users", user::route())
         .nest("/roles", role::route())
+        .nest("/contacts", contact::route())
+        .nest("/user_contacts", user_contact::route())
         .route_layer(axum::middleware::from_fn(
-            pass_builder_or_admin_by_authorization_token,
+            builder_or_admin_by_authorization_token,
         ))
 }

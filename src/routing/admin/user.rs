@@ -10,7 +10,7 @@ use axum::{
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-use crate::{feature::user::User, routing::middleware::pass_by_uri_user_extraction};
+use crate::{feature::user::User, routing::middleware::by_uri_then_insert};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateUser {
@@ -34,11 +34,11 @@ pub fn route() -> Router {
         .route("/", post(create))
         .route(
             "/{user_id}",
-            patch(update).route_layer(axum::middleware::from_fn(pass_by_uri_user_extraction)),
+            patch(update).route_layer(axum::middleware::from_fn(by_uri_then_insert)),
         )
         .route(
             "/{user_id}",
-            delete(delete_).route_layer(axum::middleware::from_fn(pass_by_uri_user_extraction)),
+            delete(delete_).route_layer(axum::middleware::from_fn(by_uri_then_insert)),
         )
         .route("/", get(read_all))
         .route("/names/{name}", get(read_all_for_name))

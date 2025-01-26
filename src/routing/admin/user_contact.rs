@@ -9,9 +9,10 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::feature::{user::User, user_contact::UserContact};
-
-use super::middleware::{by_authorization_token_then_insert, by_uri_then_insert};
+use crate::{
+    feature::{user::User, user_contact::UserContact},
+    routing::middleware::by_uri_then_insert,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateUserContact {
@@ -28,30 +29,24 @@ struct UpdateUserContact {
 pub fn route() -> Router {
     Router::new()
         .route(
-            "/",
-            post(create).route_layer(axum::middleware::from_fn(
-                by_authorization_token_then_insert,
-            )),
+            "/users/{user_id}",
+            post(create).route_layer(axum::middleware::from_fn(by_uri_then_insert)),
         )
         .route(
             "/users/{user_id}/contacts/{contact_id}",
             get(read).route_layer(axum::middleware::from_fn(by_uri_then_insert)),
         )
         .route(
-            "/",
-            patch(update).route_layer(axum::middleware::from_fn(
-                by_authorization_token_then_insert,
-            )),
+            "/users/{user_id}",
+            patch(update).route_layer(axum::middleware::from_fn(by_uri_then_insert)),
         )
         .route(
-            "/users/contacts/{contact_id}",
-            delete(delete_).route_layer(axum::middleware::from_fn(
-                by_authorization_token_then_insert,
-            )),
+            "/users/{user_id}/contacts/{contact_id}",
+            delete(delete_).route_layer(axum::middleware::from_fn(by_uri_then_insert)),
         )
         .route(
             "/users/{user_id}",
-            get(read_all_for_user).route_layer(axum::middleware::from_fn(by_uri_then_insert)),
+            delete(delete_all_for_user).route_layer(axum::middleware::from_fn(by_uri_then_insert)),
         )
 }
 
@@ -122,8 +117,8 @@ async fn delete_(
     }
 }
 
-async fn read_all_for_user(Extension(user): Extension<Arc<User>>) -> impl IntoResponse {
-    match UserContact::read_all_for_user(&user).await {
+async fn delete_all_for_user(Extension(user): Extension<Arc<User>>) -> impl IntoResponse {
+    match UserContact::delete_all_for_user(&user).await {
         Ok(user_contacts) => (StatusCode::OK, Json(serde_json::json!(user_contacts))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
