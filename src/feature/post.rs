@@ -15,20 +15,20 @@ impl Post {
         post::create(user_id, post).await
     }
 
-    pub async fn read(creation_time: &DateTime<Utc>) -> Result<Post, sqlx::Error> {
-        post::read(creation_time).await
+    pub async fn read(user_id: &i64, creation_time: &DateTime<Utc>) -> Result<Post, sqlx::Error> {
+        post::read(user_id, creation_time).await
     }
 
     pub async fn update(
-        creation_time: &DateTime<Utc>,
         user_id: &i64,
+        creation_time: &DateTime<Utc>,
         post: &String,
     ) -> Result<Post, sqlx::Error> {
-        post::update(creation_time, user_id, post).await
+        post::update(user_id, creation_time, post).await
     }
 
-    pub async fn delete(creation_time: &DateTime<Utc>) -> Result<Post, sqlx::Error> {
-        post::delete(creation_time).await
+    pub async fn delete(user_id: &i64, creation_time: &DateTime<Utc>) -> Result<Post, sqlx::Error> {
+        post::delete(user_id, creation_time).await
     }
 
     pub async fn read_all() -> Result<Vec<Post>, sqlx::Error> {

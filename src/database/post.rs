@@ -19,12 +19,13 @@ pub async fn create(user_id: &i64, post: &String) -> Result<Post, sqlx::Error> {
     .await
 }
 
-pub async fn read(creation_time: &DateTime<Utc>) -> Result<Post, sqlx::Error> {
+pub async fn read(user_id: &i64, creation_time: &DateTime<Utc>) -> Result<Post, sqlx::Error> {
     sqlx::query_as!(
         Post,
         r#"
-            SELECT * FROM "post" WHERE "creation_time" = $1
+            SELECT * FROM "post" WHERE "user_id"= $1 AND "creation_time" = $2
         "#,
+        user_id,
         creation_time
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
@@ -32,31 +33,32 @@ pub async fn read(creation_time: &DateTime<Utc>) -> Result<Post, sqlx::Error> {
 }
 
 pub async fn update(
-    creation_time: &DateTime<Utc>,
     user_id: &i64,
+    creation_time: &DateTime<Utc>,
     post: &String,
 ) -> Result<Post, sqlx::Error> {
     sqlx::query_as!(
         Post,
         r#"
-        UPDATE "post" SET user_id = $2, post = $3 WHERE "creation_time" = $1
+        UPDATE "post" SET post = $3 WHERE "user_id" = $1 AND "creation_time" = $2
         RETURNING *
     "#,
-        creation_time,
         user_id,
+        creation_time,
         post
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn delete(creation_time: &DateTime<Utc>) -> Result<Post, sqlx::Error> {
+pub async fn delete(user_id: &i64, creation_time: &DateTime<Utc>) -> Result<Post, sqlx::Error> {
     sqlx::query_as!(
         Post,
         r#"
-        DELETE FROM "post" WHERE "creation_time" = $1
+        DELETE FROM "post" WHERE "user_id" = $1 AND "creation_time" = $2
         RETURNING *
     "#,
+        user_id,
         creation_time
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
