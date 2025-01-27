@@ -67,6 +67,22 @@ pub async fn delete(user_id: &i64, contact_id: &i64) -> Result<UserContact, sqlx
     .await
 }
 
+pub async fn read_for_value(
+    contact_id: &i64,
+    contact_value: &String,
+) -> Result<UserContact, sqlx::Error> {
+    sqlx::query_as!(
+        UserContact,
+        r#"
+            SELECT * FROM "user_contact" WHERE "contact_id" = $1 AND "contact_value" = $2
+        "#,
+        contact_id,
+        contact_value,
+    )
+    .fetch_one(&*DATABASE_CONNECTIONS)
+    .await
+}
+
 pub async fn read_all_for_user(user_id: &i64) -> Result<Vec<UserContact>, sqlx::Error> {
     sqlx::query_as!(
         UserContact,

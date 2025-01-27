@@ -90,21 +90,25 @@ async fn update(
     Extension(target_user): Extension<Arc<User>>,
     Json(update_user): Json<UpdateUser>,
 ) -> impl IntoResponse {
-    match User::update(
-        &target_user.user_id,
-        &update_user.name,
-        &update_user.surname,
-        &update_user.gender,
-        &update_user.birth_date,
-        &update_user.role_id,
-    )
-    .await
-    {
-        Ok(user) => (StatusCode::ACCEPTED, Json(serde_json::json!(user))),
-        Err(err_val) => (
-            StatusCode::BAD_REQUEST,
-            Json(serde_json::json!(err_val.to_string())),
-        ),
+    if update_user.role_id == 0 {
+        (StatusCode::FORBIDDEN, Json(serde_json::json!({})))
+    } else {
+        match User::update(
+            &target_user.user_id,
+            &update_user.name,
+            &update_user.surname,
+            &update_user.gender,
+            &update_user.birth_date,
+            &update_user.role_id,
+        )
+        .await
+        {
+            Ok(user) => (StatusCode::ACCEPTED, Json(serde_json::json!(user))),
+            Err(err_val) => (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!(err_val.to_string())),
+            ),
+        }
     }
 }
 

@@ -2,43 +2,43 @@ use crate::feature::login::Login;
 
 use super::DATABASE_CONNECTIONS;
 
-pub async fn create(user_id: &i64, token: &String) -> Result<Login, sqlx::Error> {
+pub async fn create(user_id: &i64, authorization_token: &String) -> Result<Login, sqlx::Error> {
     sqlx::query_as!(
         Login,
         r#"
-            INSERT INTO "login"(user_id, token)
+            INSERT INTO "login"(user_id, authorization_token)
             VALUES ($1, $2)
             RETURNING *
         "#,
         user_id,
-        token,
+        authorization_token,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn read(user_id: &i64, token: &String) -> Result<Login, sqlx::Error> {
+pub async fn read(user_id: &i64, authorization_token: &String) -> Result<Login, sqlx::Error> {
     sqlx::query_as!(
         Login,
         r#"
-            SELECT * FROM "login" WHERE "user_id" = $1 AND "token" = $2
+            SELECT * FROM "login" WHERE "user_id" = $1 AND "authorization_token" = $2
         "#,
         user_id,
-        token
+        authorization_token
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn delete(user_id: &i64, token: &String) -> Result<Login, sqlx::Error> {
+pub async fn delete(user_id: &i64, authorization_token: &String) -> Result<Login, sqlx::Error> {
     sqlx::query_as!(
         Login,
         r#"
-        DELETE FROM "login" WHERE "user_id" = $1 AND "token" = $2
+        DELETE FROM "login" WHERE "user_id" = $1 AND "authorization_token" = $2
         RETURNING *
     "#,
         user_id,
-        token,
+        authorization_token,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await

@@ -24,6 +24,13 @@ impl UserContact {
         user_contact::read(&user.user_id, contact_id).await
     }
 
+    pub async fn read_for_value(
+        contact_id: &i64,
+        contact_value: &String,
+    ) -> Result<UserContact, sqlx::Error> {
+        user_contact::read_for_value(contact_id, contact_value).await
+    }
+
     pub async fn update(
         user: &User,
         contact_id: &i64,

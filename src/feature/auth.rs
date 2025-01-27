@@ -15,13 +15,20 @@ static ONE_TIME_PASSWORDS: LazyLock<RwLock<Vec<OneTimePassword>>> =
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct OneTimePassword {
-    pub user_id: i64,
+    user_id: i64,
     pub one_time_password: String,
 }
 
 impl OneTimePassword {
     pub fn init() -> RwLock<Vec<OneTimePassword>> {
         RwLock::new(vec![])
+    }
+
+    pub async fn from_string(user: &User, one_time_password: &String) -> Self {
+        OneTimePassword {
+            user_id: user.user_id,
+            one_time_password: one_time_password.to_owned(),
+        }
     }
 
     pub async fn new(user: &User, user_email: &String) -> Result<(), ForumMailError> {

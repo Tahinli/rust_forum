@@ -12,23 +12,23 @@ use crate::{database::login, error::ForumAuthError, SERVER_CONFIG};
 
 use super::user::User;
 
-static TOKEN_META: LazyLock<TokenMeta> = LazyLock::new(TokenMeta::init);
+static TOKEN_META: LazyLock<AuthorizationTokenMeta> = LazyLock::new(AuthorizationTokenMeta::init);
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CustomClaim {
     pub user_id: i64,
 }
 
-pub struct TokenMeta {
-    token_key: HS256Key,
-    token_verification_options: Option<VerificationOptions>,
+pub struct AuthorizationTokenMeta {
+    authorization_token: HS256Key,
+    authorization_token_verification_options: Option<VerificationOptions>,
 }
 
-impl TokenMeta {
+impl AuthorizationTokenMeta {
     fn init() -> Self {
         Self {
-            token_key: HS256Key::generate(),
-            token_verification_options: {
+            authorization_token: HS256Key::generate(),
+            authorization_token_verification_options: {
                 let mut verification_options = VerificationOptions::default();
                 verification_options.time_tolerance = Some(jwt_simple::prelude::Duration::from(0));
                 Some(verification_options)
@@ -37,7 +37,7 @@ impl TokenMeta {
     }
 
     async fn create_token(user_id: &i64) -> Option<String> {
-        let key = &TOKEN_META.token_key;
+        let key = &TOKEN_META.authorization_token;
         let custom_claim = CustomClaim { user_id: *user_id };
         let claims = Claims::with_custom_claims(
             custom_claim,
@@ -47,23 +47,24 @@ impl TokenMeta {
         );
 
         let token = key.authenticate(claims).unwrap();
-        match TokenMeta::verify_token(&token).await {
+        match AuthorizationTokenMeta::verify_token(&token).await {
             Ok(_) => Some(token),
             Err(_) => None,
         }
     }
 
     pub async fn verify_token(token: &String) -> Result<JWTClaims<CustomClaim>, jwt_simple::Error> {
-        TOKEN_META
-            .token_key
-            .verify_token::<CustomClaim>(token, TOKEN_META.token_verification_options.clone())
+        TOKEN_META.authorization_token.verify_token::<CustomClaim>(
+            token,
+            TOKEN_META.authorization_token_verification_options.clone(),
+        )
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Login {
     pub user_id: i64,
-    pub token: String,
+    pub authorization_token: String,
     pub token_creation_time: DateTime<Utc>,
 }
 
@@ -71,24 +72,24 @@ impl Login {
     pub async fn create(user_id: &i64) -> Result<Login, sqlx::Error> {
         User::read(user_id).await?;
 
-        let token = TokenMeta::create_token(user_id)
+        let token = AuthorizationTokenMeta::create_token(user_id)
             .await
             .expect("Should not panic if it isn't configured wrong");
         login::create(user_id, &token).await
     }
 
-    pub async fn read(user_id: &i64, token: &String) -> Result<Login, sqlx::Error> {
+    pub async fn read(user_id: &i64, authorization_token: &String) -> Result<Login, sqlx::Error> {
         User::read(user_id).await?;
 
-        login::read(user_id, token).await
+        login::read(user_id, authorization_token).await
     }
 
     pub async fn update(
         user_id: &i64,
-        token: &String,
+        authorization_token: &String,
     ) -> Result<Login, Box<dyn std::error::Error>> {
-        let login = Login::read(user_id, token).await?;
-        match TokenMeta::verify_token(token).await {
+        let login = Login::read(user_id, authorization_token).await?;
+        match AuthorizationTokenMeta::verify_token(authorization_token).await {
             Ok(_) => Ok(login),
             Err(_) => {
                 if DateTime::<Utc>::default()
@@ -96,7 +97,7 @@ impl Login {
                     .num_minutes()
                     <= SERVER_CONFIG.login_token_refresh_time_limit as i64
                 {
-                    Login::delete(user_id, token).await?;
+                    Login::delete(user_id, authorization_token).await?;
                     let login = Login::create(user_id).await?;
                     Ok(login)
                 } else {
@@ -105,8 +106,8 @@ impl Login {
             }
         }
     }
-    pub async fn delete(user_id: &i64, token: &String) -> Result<Login, sqlx::Error> {
-        login::delete(user_id, token).await
+    pub async fn delete(user_id: &i64, authorization_token: &String) -> Result<Login, sqlx::Error> {
+        login::delete(user_id, authorization_token).await
     }
 
     pub async fn read_all_for_user(user_id: &i64) -> Result<Vec<Login>, sqlx::Error> {

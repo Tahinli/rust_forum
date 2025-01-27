@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     error::ForumAuthError,
-    feature::{login::TokenMeta, user::User},
+    feature::{login::AuthorizationTokenMeta, user::User},
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -43,7 +43,7 @@ async fn authorization_token_extraction(
 async fn user_extraction_from_authorization_token(
     authorization_token: &String,
 ) -> Result<User, ForumAuthError> {
-    match TokenMeta::verify_token(&authorization_token.to_string()).await {
+    match AuthorizationTokenMeta::verify_token(&authorization_token.to_string()).await {
         Ok(claims) => User::read(&claims.custom.user_id)
             .await
             .map_err(|err_val| ForumAuthError::AuthenticationFailed(err_val.to_string())),
