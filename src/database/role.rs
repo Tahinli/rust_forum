@@ -16,40 +16,40 @@ pub async fn create(name: &String) -> Result<Role, sqlx::Error> {
     .await
 }
 
-pub async fn read(id: &i64) -> Result<Role, sqlx::Error> {
+pub async fn read(role_id: &i64) -> Result<Role, sqlx::Error> {
     sqlx::query_as!(
         Role,
         r#"
-            SELECT * FROM "role" WHERE "id" = $1
+            SELECT * FROM "role" WHERE "role_id" = $1
         "#,
-        id
+        role_id,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn update(id: &i64, name: &String) -> Result<Role, sqlx::Error> {
+pub async fn update(role_id: &i64, name: &String) -> Result<Role, sqlx::Error> {
     sqlx::query_as!(
         Role,
         r#"
-        UPDATE "role" SET "name" = $2 WHERE "id" = $1
+        UPDATE "role" SET "name" = $2 WHERE "role_id" = $1
         RETURNING *
     "#,
-        id,
+        role_id,
         name,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn delete(id: &i64) -> Result<Role, sqlx::Error> {
+pub async fn delete(role_id: &i64) -> Result<Role, sqlx::Error> {
     sqlx::query_as!(
         Role,
         r#"
-        DELETE FROM "role" WHERE "id" = $1
+        DELETE FROM "role" WHERE "role_id" = $1
         RETURNING *
     "#,
-        id
+        role_id,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await

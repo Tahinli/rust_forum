@@ -1,5 +1,3 @@
-use chrono::{DateTime, Utc};
-
 use crate::feature::post::Post;
 
 use super::DATABASE_CONNECTIONS;
@@ -13,53 +11,48 @@ pub async fn create(user_id: &i64, post: &String) -> Result<Post, sqlx::Error> {
             RETURNING *
         "#,
         user_id,
-        post
+        post,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn read(user_id: &i64, creation_time: &DateTime<Utc>) -> Result<Post, sqlx::Error> {
+pub async fn read(post_id: &i64) -> Result<Post, sqlx::Error> {
     sqlx::query_as!(
         Post,
         r#"
-            SELECT * FROM "post" WHERE "user_id"= $1 AND "creation_time" = $2
+            SELECT * FROM "post" WHERE "post_id"= $1
         "#,
-        user_id,
-        creation_time
+        post_id,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn update(
-    user_id: &i64,
-    creation_time: &DateTime<Utc>,
-    post: &String,
-) -> Result<Post, sqlx::Error> {
+pub async fn update(post_id: &i64, user_id: &i64, post: &String) -> Result<Post, sqlx::Error> {
     sqlx::query_as!(
         Post,
         r#"
-        UPDATE "post" SET post = $3 WHERE "user_id" = $1 AND "creation_time" = $2
+        UPDATE "post" SET post = $3 WHERE "post_id" = $1 AND "user_id" = $2
         RETURNING *
     "#,
+        post_id,
         user_id,
-        creation_time,
-        post
+        post,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn delete(user_id: &i64, creation_time: &DateTime<Utc>) -> Result<Post, sqlx::Error> {
+pub async fn delete(post_id: &i64, user_id: &i64) -> Result<Post, sqlx::Error> {
     sqlx::query_as!(
         Post,
         r#"
-        DELETE FROM "post" WHERE "user_id" = $1 AND "creation_time" = $2
+        DELETE FROM "post" WHERE "post_id" = $1 AND "user_id" = $2
         RETURNING *
     "#,
+        post_id,
         user_id,
-        creation_time
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await

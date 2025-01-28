@@ -4,13 +4,6 @@ use serde::{Deserialize, Serialize};
 use crate::database::user;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Contact {
-    pub email: String,
-    pub phone: String,
-    pub website: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct User {
     pub user_id: i64,
     pub name: String,

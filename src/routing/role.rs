@@ -4,12 +4,12 @@ use crate::feature::role::Role;
 
 pub fn route() -> Router {
     Router::new()
-        .route("/{id}", get(read))
+        .route("/{role_id}", get(read))
         .route("/", get(read_all))
 }
 
-async fn read(Path(id): Path<i64>) -> impl IntoResponse {
-    match Role::read(&id).await {
+async fn read(Path(role_id): Path<i64>) -> impl IntoResponse {
+    match Role::read(&role_id).await {
         Ok(role) => (StatusCode::OK, Json(serde_json::json!(role))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,

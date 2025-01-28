@@ -1,48 +1,48 @@
+use std::sync::Arc;
+
 use axum::{
     extract::Path,
     http::StatusCode,
     response::IntoResponse,
-    routing::{delete, get, patch, post},
-    Json, Router,
+    routing::{delete, get, post},
+    Extension, Json, Router,
 };
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::feature::comment_interaction::CommentInteraction;
+use crate::feature::{comment_interaction::CommentInteraction, user::User};
+
+use super::middleware::by_authorization_token_then_insert;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateCommentInteraction {
-    pub comment_creation_time: DateTime<Utc>,
     pub interaction_id: i64,
-    pub user_id: i64,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct UpdateCommentInteraction {
-    pub interaction_time: DateTime<Utc>,
-    pub comment_creation_time: DateTime<Utc>,
-    pub interaction_id: i64,
-    pub user_id: i64,
 }
 
 pub fn route() -> Router {
     Router::new()
-        .route("/", post(create))
-        .route("/{interaction_time}", get(read))
-        .route("/", patch(update))
-        .route("/{interaction_time}", delete(delete_))
         .route(
-            "/comments/{comment_creation_time}",
-            get(read_all_for_comment),
+            "/comments/{comment_id}",
+            post(create).route_layer(axum::middleware::from_fn(
+                by_authorization_token_then_insert,
+            )),
         )
+        .route(
+            "/comments/{comment_id}",
+            delete(delete_).route_layer(axum::middleware::from_fn(
+                by_authorization_token_then_insert,
+            )),
+        )
+        .route("/comments/{comment_id}", get(read_all_for_comment))
 }
 
 async fn create(
+    Extension(user): Extension<Arc<User>>,
+    Path(comment_id): Path<i64>,
     Json(create_comment_interaction): Json<CreateCommentInteraction>,
 ) -> impl IntoResponse {
     match CommentInteraction::create(
-        &create_comment_interaction.comment_creation_time,
-        &create_comment_interaction.user_id,
+        &comment_id,
+        &user.user_id,
         &create_comment_interaction.interaction_id,
     )
     .await
@@ -58,38 +58,11 @@ async fn create(
     }
 }
 
-async fn read(Path(interaction_time): Path<DateTime<Utc>>) -> impl IntoResponse {
-    match CommentInteraction::read(&interaction_time).await {
-        Ok(comment_interaction) => (StatusCode::OK, Json(serde_json::json!(comment_interaction))),
-        Err(err_val) => (
-            StatusCode::BAD_REQUEST,
-            Json(serde_json::json!(err_val.to_string())),
-        ),
-    }
-}
-
-async fn update(
-    Json(update_comment_interaction): Json<UpdateCommentInteraction>,
+async fn delete_(
+    Extension(user): Extension<Arc<User>>,
+    Path(comment_id): Path<i64>,
 ) -> impl IntoResponse {
-    match CommentInteraction::update(
-        &update_comment_interaction.interaction_time,
-        &update_comment_interaction.interaction_id,
-    )
-    .await
-    {
-        Ok(comment_interaction) => (
-            StatusCode::ACCEPTED,
-            Json(serde_json::json!(comment_interaction)),
-        ),
-        Err(err_val) => (
-            StatusCode::BAD_REQUEST,
-            Json(serde_json::json!(err_val.to_string())),
-        ),
-    }
-}
-
-async fn delete_(Path(interaction_time): Path<DateTime<Utc>>) -> impl IntoResponse {
-    match CommentInteraction::delete(&interaction_time).await {
+    match CommentInteraction::delete(&comment_id, &user.user_id).await {
         Ok(comment_interaction) => (
             StatusCode::NO_CONTENT,
             Json(serde_json::json!(comment_interaction)),
@@ -101,10 +74,8 @@ async fn delete_(Path(interaction_time): Path<DateTime<Utc>>) -> impl IntoRespon
     }
 }
 
-async fn read_all_for_comment(
-    Path(comment_creation_time): Path<DateTime<Utc>>,
-) -> impl IntoResponse {
-    match CommentInteraction::read_all_for_comment(&comment_creation_time).await {
+async fn read_all_for_comment(Path(comment_id): Path<i64>) -> impl IntoResponse {
+    match CommentInteraction::read_all_for_comment(&comment_id).await {
         Ok(comment_interactions) => (
             StatusCode::OK,
             Json(serde_json::json!(comment_interactions)),

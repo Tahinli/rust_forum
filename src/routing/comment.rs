@@ -1,41 +1,60 @@
+use std::sync::Arc;
+
 use axum::{
     extract::Path,
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, patch, post},
-    Json, Router,
+    Extension, Json, Router,
 };
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::feature::comment::Comment;
+use crate::feature::{comment::Comment, user::User};
+
+use super::middleware::by_authorization_token_then_insert;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateComment {
-    post_creation_time: DateTime<Utc>,
-    user_id: i64,
+    post_id: i64,
     comment: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct UpdateComment {
-    creation_time: DateTime<Utc>,
     comment: String,
 }
 
 pub fn route() -> Router {
     Router::new()
-        .route("/", post(create))
-        .route("/{creation_time}", get(read))
-        .route("/", patch(update))
-        .route("/{creation_time}", delete(delete_))
-        .route("/posts/{post_creation_time}", get(read_all_for_post))
+        .route(
+            "/",
+            post(create).route_layer(axum::middleware::from_fn(
+                by_authorization_token_then_insert,
+            )),
+        )
+        .route("/{comment_id}", get(read))
+        .route(
+            "/{comment_id}",
+            patch(update).route_layer(axum::middleware::from_fn(
+                by_authorization_token_then_insert,
+            )),
+        )
+        .route(
+            "/{comment_id}",
+            delete(delete_).route_layer(axum::middleware::from_fn(
+                by_authorization_token_then_insert,
+            )),
+        )
+        .route("/posts/{post_id}", get(read_all_for_post))
 }
 
-async fn create(Json(create_comment): Json<CreateComment>) -> impl IntoResponse {
+async fn create(
+    Extension(user): Extension<Arc<User>>,
+    Json(create_comment): Json<CreateComment>,
+) -> impl IntoResponse {
     match Comment::create(
-        &create_comment.post_creation_time,
-        &create_comment.user_id,
+        &user.user_id,
+        &create_comment.post_id,
         &create_comment.comment,
     )
     .await
@@ -48,8 +67,8 @@ async fn create(Json(create_comment): Json<CreateComment>) -> impl IntoResponse 
     }
 }
 
-async fn read(Path(creation_time): Path<DateTime<Utc>>) -> impl IntoResponse {
-    match Comment::read(&creation_time).await {
+async fn read(Path(comment_id): Path<i64>) -> impl IntoResponse {
+    match Comment::read(&comment_id).await {
         Ok(comment) => (StatusCode::OK, Json(serde_json::json!(comment))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -58,8 +77,12 @@ async fn read(Path(creation_time): Path<DateTime<Utc>>) -> impl IntoResponse {
     }
 }
 
-async fn update(Json(update_comment): Json<UpdateComment>) -> impl IntoResponse {
-    match Comment::update(&update_comment.creation_time, &update_comment.comment).await {
+async fn update(
+    Extension(user): Extension<Arc<User>>,
+    Path(comment_id): Path<i64>,
+    Json(update_comment): Json<UpdateComment>,
+) -> impl IntoResponse {
+    match Comment::update(&comment_id, &user.user_id, &update_comment.comment).await {
         Ok(comment) => (StatusCode::ACCEPTED, Json(serde_json::json!(comment))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -68,8 +91,11 @@ async fn update(Json(update_comment): Json<UpdateComment>) -> impl IntoResponse 
     }
 }
 
-async fn delete_(Path(creation_time): Path<DateTime<Utc>>) -> impl IntoResponse {
-    match Comment::delete(&creation_time).await {
+async fn delete_(
+    Extension(user): Extension<Arc<User>>,
+    Path(comment_id): Path<i64>,
+) -> impl IntoResponse {
+    match Comment::delete(&comment_id, &user.user_id).await {
         Ok(comment) => (StatusCode::NO_CONTENT, Json(serde_json::json!(comment))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -78,8 +104,8 @@ async fn delete_(Path(creation_time): Path<DateTime<Utc>>) -> impl IntoResponse 
     }
 }
 
-async fn read_all_for_post(Path(post_creation_time): Path<DateTime<Utc>>) -> impl IntoResponse {
-    match Comment::read_all_for_post(&post_creation_time).await {
+async fn read_all_for_post(Path(comment_id): Path<i64>) -> impl IntoResponse {
+    match Comment::read_all_for_post(&comment_id).await {
         Ok(comments) => (StatusCode::OK, Json(serde_json::json!(comments))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,

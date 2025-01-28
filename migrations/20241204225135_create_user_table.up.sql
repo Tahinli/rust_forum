@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS "user"(
     surname VARCHAR(256) NOT NULL,
     gender BOOLEAN NOT NULL,
     birth_date DATE NOT NULL,
-    role_id BIGINT NOT NULL REFERENCES "role" DEFAULT 10,
+    role_id BIGINT NOT NULL REFERENCES "role"(role_id) DEFAULT 10,
     creation_time TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

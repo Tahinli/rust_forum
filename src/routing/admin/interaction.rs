@@ -16,15 +16,14 @@ struct CreateInteraction {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct UpdateInteraction {
-    id: i64,
     name: String,
 }
 
 pub fn route() -> Router {
     Router::new()
         .route("/", post(create))
-        .route("/", patch(update))
-        .route("/{id}", delete(delete_))
+        .route("/{interaction_id}", patch(update))
+        .route("/{interaction_id}", delete(delete_))
 }
 
 async fn create(Json(create_interaction): Json<CreateInteraction>) -> impl IntoResponse {
@@ -37,8 +36,11 @@ async fn create(Json(create_interaction): Json<CreateInteraction>) -> impl IntoR
     }
 }
 
-async fn update(Json(update_interaction): Json<UpdateInteraction>) -> impl IntoResponse {
-    match Interaction::update(&update_interaction.id, &update_interaction.name).await {
+async fn update(
+    Path(interaction_id): Path<i64>,
+    Json(update_interaction): Json<UpdateInteraction>,
+) -> impl IntoResponse {
+    match Interaction::update(&interaction_id, &update_interaction.name).await {
         Ok(interaction) => (StatusCode::ACCEPTED, Json(serde_json::json!(interaction))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -47,8 +49,8 @@ async fn update(Json(update_interaction): Json<UpdateInteraction>) -> impl IntoR
     }
 }
 
-async fn delete_(Path(id): Path<i64>) -> impl IntoResponse {
-    match Interaction::delete(&id).await {
+async fn delete_(Path(interaction_id): Path<i64>) -> impl IntoResponse {
+    match Interaction::delete(&interaction_id).await {
         Ok(interaction) => (StatusCode::NO_CONTENT, Json(serde_json::json!(interaction))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,

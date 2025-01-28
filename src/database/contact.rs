@@ -16,40 +16,40 @@ pub async fn create(name: &String) -> Result<Contact, sqlx::Error> {
     .await
 }
 
-pub async fn read(id: &i64) -> Result<Contact, sqlx::Error> {
+pub async fn read(contact_id: &i64) -> Result<Contact, sqlx::Error> {
     sqlx::query_as!(
         Contact,
         r#"
-            SELECT * FROM "contact" WHERE "id" = $1
+            SELECT * FROM "contact" WHERE "contact_id" = $1
         "#,
-        id
+        contact_id,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn update(id: &i64, name: &String) -> Result<Contact, sqlx::Error> {
+pub async fn update(contact_id: &i64, name: &String) -> Result<Contact, sqlx::Error> {
     sqlx::query_as!(
         Contact,
         r#"
-        UPDATE "contact" SET "name" = $2 WHERE "id" = $1
+        UPDATE "contact" SET "name" = $2 WHERE "contact_id" = $1
         RETURNING *
     "#,
-        id,
+        contact_id,
         name,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn delete(id: &i64) -> Result<Contact, sqlx::Error> {
+pub async fn delete(contact_id: &i64) -> Result<Contact, sqlx::Error> {
     sqlx::query_as!(
         Contact,
         r#"
-        DELETE FROM "contact" WHERE "id" = $1
+        DELETE FROM "contact" WHERE "contact_id" = $1
         RETURNING *
     "#,
-        id
+        contact_id,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await

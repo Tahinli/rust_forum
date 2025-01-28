@@ -7,7 +7,6 @@ use axum::{
     routing::{delete, get, patch, post},
     Extension, Json, Router,
 };
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::feature::{post::Post, user::User};
@@ -21,7 +20,6 @@ struct CreatePost {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct UpdatePost {
-    creation_time: DateTime<Utc>,
     post: String,
 }
 
@@ -33,16 +31,13 @@ pub fn route() -> Router {
                 by_authorization_token_then_insert,
             )),
         )
-        .route(
-            "/users/{user_id}/creation_times/{creation_time}",
-            get(read).route_layer(axum::middleware::from_fn(by_uri_then_insert)),
-        )
-        .route("/", patch(update))
+        .route("/{post_id}", get(read))
+        .route("/{post_id}", patch(update))
         .route_layer(axum::middleware::from_fn(
             by_authorization_token_then_insert,
         ))
         .route(
-            "/creation_times/{creation_time}",
+            "/{post_id}",
             delete(delete_).route_layer(axum::middleware::from_fn(
                 by_authorization_token_then_insert,
             )),
@@ -67,11 +62,8 @@ async fn create(
     }
 }
 
-async fn read(
-    Extension(user): Extension<Arc<User>>,
-    Path(creation_time): Path<DateTime<Utc>>,
-) -> impl IntoResponse {
-    match Post::read(&user.user_id, &creation_time).await {
+async fn read(Path(post_id): Path<i64>) -> impl IntoResponse {
+    match Post::read(&post_id).await {
         Ok(post) => (StatusCode::OK, Json(serde_json::json!(post))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -82,9 +74,10 @@ async fn read(
 
 async fn update(
     Extension(user): Extension<Arc<User>>,
-    Json(update_role): Json<UpdatePost>,
+    Path(post_id): Path<i64>,
+    Json(update_post): Json<UpdatePost>,
 ) -> impl IntoResponse {
-    match Post::update(&user.user_id, &update_role.creation_time, &update_role.post).await {
+    match Post::update(&post_id, &user.user_id, &update_post.post).await {
         Ok(post) => (StatusCode::ACCEPTED, Json(serde_json::json!(post))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
@@ -95,9 +88,9 @@ async fn update(
 
 async fn delete_(
     Extension(user): Extension<Arc<User>>,
-    Path(creation_time): Path<DateTime<Utc>>,
+    Path(post_id): Path<i64>,
 ) -> impl IntoResponse {
-    match Post::delete(&user.user_id, &creation_time).await {
+    match Post::delete(&post_id, &user.user_id).await {
         Ok(post) => (StatusCode::NO_CONTENT, Json(serde_json::json!(post))),
         Err(err_val) => (
             StatusCode::BAD_REQUEST,

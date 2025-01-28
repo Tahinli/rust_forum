@@ -1,22 +1,20 @@
-use chrono::{DateTime, Utc};
-
 use crate::feature::comment_interaction::CommentInteraction;
 
 use super::DATABASE_CONNECTIONS;
 
 pub async fn create(
-    comment_creation_time: &DateTime<Utc>,
+    comment_id: &i64,
     user_id: &i64,
     interaction_id: &i64,
 ) -> Result<CommentInteraction, sqlx::Error> {
     sqlx::query_as!(
         CommentInteraction,
         r#"
-            INSERT INTO "comment_interaction"(comment_creation_time, user_id, interaction_id)
+            INSERT INTO "comment_interaction"(comment_id, user_id, interaction_id)
             VALUES ($1, $2, $3)
             RETURNING *
         "#,
-        comment_creation_time,
+        comment_id,
         user_id,
         interaction_id,
     )
@@ -24,57 +22,61 @@ pub async fn create(
     .await
 }
 
-pub async fn read(interaction_time: &DateTime<Utc>) -> Result<CommentInteraction, sqlx::Error> {
+pub async fn read(comment_id: &i64, user_id: &i64) -> Result<CommentInteraction, sqlx::Error> {
     sqlx::query_as!(
         CommentInteraction,
         r#"
-            SELECT * FROM "comment_interaction" WHERE "interaction_time" = $1
+            SELECT * FROM "comment_interaction" WHERE "comment_id" = $1 AND "user_id" = $2
         "#,
-        interaction_time
+        comment_id,
+        user_id,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
 pub async fn update(
-    interaction_time: &DateTime<Utc>,
+    comment_id: &i64,
+    user_id: &i64,
     interaction_id: &i64,
 ) -> Result<CommentInteraction, sqlx::Error> {
     sqlx::query_as!(
         CommentInteraction,
         r#"
-        UPDATE "comment_interaction" SET "interaction_id" = $2 WHERE "interaction_time" = $1
+        UPDATE "comment_interaction" SET "interaction_id" = $3 WHERE "comment_id" = $1 AND "user_id" = $2
         RETURNING *
     "#,
-        interaction_time,
+        comment_id,
+        user_id,
         interaction_id
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn delete(interaction_time: &DateTime<Utc>) -> Result<CommentInteraction, sqlx::Error> {
+pub async fn delete(comment_id: &i64, user_id: &i64) -> Result<CommentInteraction, sqlx::Error> {
     sqlx::query_as!(
         CommentInteraction,
         r#"
-        DELETE FROM "comment_interaction" WHERE "interaction_time" = $1
+        DELETE FROM "comment_interaction" WHERE "comment_id" = $1 AND "user_id" = $2
         RETURNING *
     "#,
-        interaction_time
+        comment_id,
+        user_id,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
 pub async fn read_all_for_comment(
-    comment_creation_time: &DateTime<Utc>,
+    comment_id: &i64,
 ) -> Result<Vec<CommentInteraction>, sqlx::Error> {
     sqlx::query_as!(
         CommentInteraction,
         r#"
-            SELECT * FROM "comment_interaction" WHERE "comment_creation_time" = $1
+            SELECT * FROM "comment_interaction" WHERE "comment_id" = $1
         "#,
-        comment_creation_time
+        comment_id
     )
     .fetch_all(&*DATABASE_CONNECTIONS)
     .await

@@ -5,8 +5,9 @@ use crate::database::post;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Post {
-    pub creation_time: DateTime<Utc>,
+    pub post_id: i64,
     pub user_id: i64,
+    pub creation_time: DateTime<Utc>,
     pub post: String,
 }
 
@@ -15,20 +16,16 @@ impl Post {
         post::create(user_id, post).await
     }
 
-    pub async fn read(user_id: &i64, creation_time: &DateTime<Utc>) -> Result<Post, sqlx::Error> {
-        post::read(user_id, creation_time).await
+    pub async fn read(post_id: &i64) -> Result<Post, sqlx::Error> {
+        post::read(post_id).await
     }
 
-    pub async fn update(
-        user_id: &i64,
-        creation_time: &DateTime<Utc>,
-        post: &String,
-    ) -> Result<Post, sqlx::Error> {
-        post::update(user_id, creation_time, post).await
+    pub async fn update(post_id: &i64, user_id: &i64, post: &String) -> Result<Post, sqlx::Error> {
+        post::update(post_id, user_id, post).await
     }
 
-    pub async fn delete(user_id: &i64, creation_time: &DateTime<Utc>) -> Result<Post, sqlx::Error> {
-        post::delete(user_id, creation_time).await
+    pub async fn delete(post_id: &i64, user_id: &i64) -> Result<Post, sqlx::Error> {
+        post::delete(post_id, user_id).await
     }
 
     pub async fn read_all() -> Result<Vec<Post>, sqlx::Error> {

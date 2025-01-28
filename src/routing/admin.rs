@@ -1,3 +1,4 @@
+pub mod comment;
 pub mod contact;
 pub mod interaction;
 pub mod login;
@@ -19,6 +20,7 @@ pub fn route() -> Router {
         .nest("/user_contacts", user_contact::route())
         .nest("/interactions", interaction::route())
         .nest("/posts", post::route())
+        .nest("/comments", comment::route())
         .route_layer(axum::middleware::from_fn(
             builder_or_admin_by_authorization_token,
         ))

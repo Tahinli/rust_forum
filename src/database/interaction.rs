@@ -16,40 +16,40 @@ pub async fn create(name: &String) -> Result<Interaction, sqlx::Error> {
     .await
 }
 
-pub async fn read(id: &i64) -> Result<Interaction, sqlx::Error> {
+pub async fn read(interaction_id: &i64) -> Result<Interaction, sqlx::Error> {
     sqlx::query_as!(
         Interaction,
         r#"
-            SELECT * FROM "interaction" WHERE "id" = $1
+            SELECT * FROM "interaction" WHERE "interaction_id" = $1
         "#,
-        id
+        interaction_id,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn update(id: &i64, name: &String) -> Result<Interaction, sqlx::Error> {
+pub async fn update(interaction_id: &i64, name: &String) -> Result<Interaction, sqlx::Error> {
     sqlx::query_as!(
         Interaction,
         r#"
-        UPDATE "interaction" SET "name" = $2 WHERE "id" = $1
+        UPDATE "interaction" SET "name" = $2 WHERE "interaction_id" = $1
         RETURNING *
     "#,
-        id,
+        interaction_id,
         name
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
 }
 
-pub async fn delete(id: &i64) -> Result<Interaction, sqlx::Error> {
+pub async fn delete(interaction_id: &i64) -> Result<Interaction, sqlx::Error> {
     sqlx::query_as!(
         Interaction,
         r#"
-        DELETE FROM "interaction" WHERE "id" = $1
+        DELETE FROM "interaction" WHERE "interaction_id" = $1
         RETURNING *
     "#,
-        id
+        interaction_id,
     )
     .fetch_one(&*DATABASE_CONNECTIONS)
     .await
