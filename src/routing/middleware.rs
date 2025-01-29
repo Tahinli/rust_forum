@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-    extract::Request,
+    extract::{OriginalUri, Request},
     http::{self, HeaderMap, StatusCode, Uri},
     middleware::Next,
     response::IntoResponse,
@@ -64,11 +64,11 @@ async fn user_extraction_from_uri(request_uri: &Uri) -> Result<User, ForumAuthEr
     let request_uri_parts = request_uri.path().split('/').collect::<Vec<&str>>();
     for (index, uri_part) in request_uri_parts.iter().enumerate() {
         if *uri_part == "users" {
-            if let Some(user_id) = request_uri_parts.get(index) {
-                if let Ok(user_id) = (*user_id).parse::<i64>() {
-                    User::read(&user_id).await.map_err(|err_val| {
+            if let Some(user_id) = request_uri_parts.get(index + 1) {
+                if let Ok(user_id) = user_id.parse::<i64>() {
+                    return User::read(&user_id).await.map_err(|err_val| {
                         ForumAuthError::AuthenticationFailed(err_val.to_string())
-                    })?;
+                    });
                 }
             }
         }
@@ -86,10 +86,7 @@ async fn user_from_header_and_target_user_from_uri_extraction(
     Ok(UserAndTargetUser { user, target_user })
 }
 
-pub async fn user_and_token_then_insert(
-    mut request: Request,
-    next: Next,
-) -> Result<impl IntoResponse, StatusCode> {
+pub async fn user_and_token_then_insert(mut request: Request, next: Next) -> impl IntoResponse {
     if let Ok(authorization_token) = authorization_token_extraction(&request.headers()).await {
         if let Ok(user) = user_extraction_from_authorization_token(&authorization_token).await {
             let user_and_token = Arc::new(UserAndAuthorizationToken {
@@ -98,110 +95,115 @@ pub async fn user_and_token_then_insert(
             });
 
             request.extensions_mut().insert(user_and_token);
-            return Ok(next.run(request).await);
+            return next.run(request).await;
         }
     }
-    Err(StatusCode::FORBIDDEN)
+    StatusCode::FORBIDDEN.into_response()
 }
 
-pub async fn by_authorization_token(
-    request: Request,
-    next: Next,
-) -> Result<impl IntoResponse, StatusCode> {
+pub async fn by_authorization_token(request: Request, next: Next) -> impl IntoResponse {
     match user_extraction_from_header(request.headers()).await {
-        Ok(_) => Ok(next.run(request).await),
-        Err(_) => Err(StatusCode::FORBIDDEN),
+        Ok(_) => next.run(request).await,
+        Err(_) => StatusCode::FORBIDDEN.into_response(),
     }
 }
 
 pub async fn by_authorization_token_then_insert(
     mut request: Request,
     next: Next,
-) -> Result<impl IntoResponse, StatusCode> {
+) -> impl IntoResponse {
     match user_extraction_from_header(request.headers()).await {
         Ok(user) => {
             let user = Arc::new(user);
             request.extensions_mut().insert(user);
 
-            Ok(next.run(request).await)
+            next.run(request).await
         }
-        Err(_) => Err(StatusCode::FORBIDDEN),
+        Err(_) => StatusCode::FORBIDDEN.into_response(),
     }
 }
 
-pub async fn by_uri_then_insert(
-    mut request: Request,
-    next: Next,
-) -> Result<impl IntoResponse, StatusCode> {
-    if let Ok(target_user) = user_extraction_from_uri(request.uri()).await {
+pub async fn by_uri_then_insert(mut request: Request, next: Next) -> impl IntoResponse {
+    if let Ok(target_user) = user_extraction_from_uri(
+        request
+            .extensions()
+            .get::<OriginalUri>()
+            .expect("Shouldn't panic, how we couldn't have uri"),
+    )
+    .await
+    {
         let target_user = Arc::new(target_user);
         request.extensions_mut().insert(target_user);
 
-        return Ok(next.run(request).await);
+        return next.run(request).await;
     }
-    Err(StatusCode::BAD_REQUEST)
+    StatusCode::BAD_REQUEST.into_response()
 }
 
-pub async fn builder_by_authorization_token(
-    request: Request,
-    next: Next,
-) -> Result<impl IntoResponse, StatusCode> {
+pub async fn builder_by_authorization_token(request: Request, next: Next) -> impl IntoResponse {
     if let Ok(user) = user_extraction_from_header(request.headers()).await {
         if User::is_builder(&user).await {
-            return Ok(next.run(request).await);
+            return next.run(request).await;
         }
     }
-    Err(StatusCode::FORBIDDEN)
+    StatusCode::FORBIDDEN.into_response()
 }
 
 pub async fn builder_by_authorization_token_then_insert(
     mut request: Request,
     next: Next,
-) -> Result<impl IntoResponse, StatusCode> {
+) -> impl IntoResponse {
     if let Ok(user) = user_extraction_from_header(request.headers()).await {
         if User::is_builder(&user).await {
             let user = Arc::new(user);
             request.extensions_mut().insert(user);
 
-            return Ok(next.run(request).await);
+            return next.run(request).await;
         }
     }
-    Err(StatusCode::FORBIDDEN)
+    StatusCode::FORBIDDEN.into_response()
 }
 
 pub async fn builder_or_admin_by_authorization_token(
     request: Request,
     next: Next,
-) -> Result<impl IntoResponse, StatusCode> {
+) -> impl IntoResponse {
     if let Ok(user) = user_extraction_from_header(request.headers()).await {
         if User::is_builder_or_admin(&user).await {
-            return Ok(next.run(request).await);
+            return next.run(request).await;
         }
     }
-    Err(StatusCode::FORBIDDEN)
+
+    StatusCode::FORBIDDEN.into_response()
 }
 
 pub async fn builder_or_admin_by_authorization_token_then_insert(
     mut request: Request,
     next: Next,
-) -> Result<impl IntoResponse, StatusCode> {
+) -> impl IntoResponse {
     if let Ok(user) = user_extraction_from_header(request.headers()).await {
         if User::is_builder_or_admin(&user).await {
             let user = Arc::new(user);
             request.extensions_mut().insert(user);
 
-            return Ok(next.run(request).await);
+            return next.run(request).await;
         }
     }
-    Err(StatusCode::FORBIDDEN)
+    StatusCode::FORBIDDEN.into_response()
 }
 
 pub async fn builder_by_authorization_token_and_target_user_by_uri_then_insert_target(
     mut request: Request,
     next: Next,
-) -> Result<impl IntoResponse, StatusCode> {
-    if let Ok(user_and_target_user) =
-        user_from_header_and_target_user_from_uri_extraction(request.headers(), request.uri()).await
+) -> impl IntoResponse {
+    if let Ok(user_and_target_user) = user_from_header_and_target_user_from_uri_extraction(
+        request.headers(),
+        request
+            .extensions()
+            .get::<OriginalUri>()
+            .expect("Shouldn't panic, how we couldn't have uri"),
+    )
+    .await
     {
         let user = user_and_target_user.user;
         let target_user = user_and_target_user.target_user;
@@ -210,18 +212,24 @@ pub async fn builder_by_authorization_token_and_target_user_by_uri_then_insert_t
             let target_user = Arc::new(target_user);
             request.extensions_mut().insert(target_user);
 
-            return Ok(next.run(request).await);
+            return next.run(request).await;
         }
     }
-    Err(StatusCode::FORBIDDEN)
+    StatusCode::FORBIDDEN.into_response()
 }
 
 pub async fn builder_or_admin_by_authorization_token_and_target_user_by_uri_then_insert_target(
     mut request: Request,
     next: Next,
-) -> Result<impl IntoResponse, StatusCode> {
-    if let Ok(user_and_target_user) =
-        user_from_header_and_target_user_from_uri_extraction(request.headers(), request.uri()).await
+) -> impl IntoResponse {
+    if let Ok(user_and_target_user) = user_from_header_and_target_user_from_uri_extraction(
+        request.headers(),
+        request
+            .extensions()
+            .get::<OriginalUri>()
+            .expect("Shouldn't panic, how we couldn't have uri"),
+    )
+    .await
     {
         let user = user_and_target_user.user;
         let target_user = user_and_target_user.target_user;
@@ -230,8 +238,8 @@ pub async fn builder_or_admin_by_authorization_token_and_target_user_by_uri_then
             let target_user = Arc::new(target_user);
             request.extensions_mut().insert(target_user);
 
-            return Ok(next.run(request).await);
+            return next.run(request).await;
         }
     }
-    Err(StatusCode::FORBIDDEN)
+    StatusCode::FORBIDDEN.into_response()
 }

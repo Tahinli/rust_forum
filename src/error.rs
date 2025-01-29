@@ -5,6 +5,7 @@ pub enum ForumInputError {
     ForbiddenCharacter,
     ForbiddenString,
     EmptyParameter,
+    TooLong,
 }
 
 impl std::fmt::Display for ForumInputError {
@@ -17,6 +18,7 @@ impl std::fmt::Display for ForumInputError {
                 write!(f, "Forbidden String Detected")
             }
             &ForumInputError::EmptyParameter => write!(f, "Parameter is Empty"),
+            ForumInputError::TooLong => write!(f, "Input is Too Long"),
         }
     }
 }

@@ -10,7 +10,10 @@ use axum::{
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-use crate::{feature::user::User, routing::middleware::by_uri_then_insert};
+use crate::{
+    feature::{user::User, user_contact::UserContact},
+    routing::middleware::by_uri_then_insert,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateUser {
@@ -18,6 +21,7 @@ struct CreateUser {
     surname: String,
     gender: bool,
     birth_date: NaiveDate,
+    email: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -78,7 +82,13 @@ async fn create(Json(create_user): Json<CreateUser>) -> impl IntoResponse {
     )
     .await
     {
-        Ok(user) => (StatusCode::CREATED, Json(serde_json::json!(user))),
+        Ok(user) => match UserContact::create_for_email(&user, &create_user.email).await {
+            Ok(_) => (StatusCode::CREATED, Json(serde_json::json!(user))),
+            Err(err_val) => (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!(err_val.to_string())),
+            ),
+        },
         Err(err_val) => (
             StatusCode::BAD_REQUEST,
             Json(serde_json::json!(err_val.to_string())),

@@ -9,7 +9,11 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::feature::{post::Post, user::User};
+use crate::{
+    error::ForumInputError,
+    feature::{post::Post, user::User},
+    SERVER_CONFIG,
+};
 
 use super::middleware::{by_authorization_token_then_insert, by_uri_then_insert};
 
@@ -53,12 +57,19 @@ async fn create(
     Extension(user): Extension<Arc<User>>,
     Json(create_post): Json<CreatePost>,
 ) -> impl IntoResponse {
-    match Post::create(&user.user_id, &create_post.post).await {
-        Ok(post) => (StatusCode::CREATED, Json(serde_json::json!(post))),
-        Err(err_val) => (
+    if create_post.post.len() > SERVER_CONFIG.post_length_limit {
+        return (
             StatusCode::BAD_REQUEST,
-            Json(serde_json::json!(err_val.to_string())),
-        ),
+            Json(serde_json::json!(ForumInputError::TooLong)),
+        );
+    } else {
+        match Post::create(&user.user_id, &create_post.post).await {
+            Ok(post) => (StatusCode::CREATED, Json(serde_json::json!(post))),
+            Err(err_val) => (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!(err_val.to_string())),
+            ),
+        }
     }
 }
 
@@ -77,12 +88,19 @@ async fn update(
     Path(post_id): Path<i64>,
     Json(update_post): Json<UpdatePost>,
 ) -> impl IntoResponse {
-    match Post::update(&post_id, &user.user_id, &update_post.post).await {
-        Ok(post) => (StatusCode::ACCEPTED, Json(serde_json::json!(post))),
-        Err(err_val) => (
+    if update_post.post.len() > SERVER_CONFIG.post_length_limit {
+        return (
             StatusCode::BAD_REQUEST,
-            Json(serde_json::json!(err_val.to_string())),
-        ),
+            Json(serde_json::json!(ForumInputError::TooLong)),
+        );
+    } else {
+        match Post::update(&post_id, &user.user_id, &update_post.post).await {
+            Ok(post) => (StatusCode::ACCEPTED, Json(serde_json::json!(post))),
+            Err(err_val) => (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!(err_val.to_string())),
+            ),
+        }
     }
 }
 

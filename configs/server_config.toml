@@ -4,3 +4,5 @@ otp_time_limit = 15
 login_token_expiration_time_limit = 15
 login_token_refresh_time_limit = 30
 concurrency_limit = -1
+post_length_limit = 1048576
+comment_length_limit = 1048576

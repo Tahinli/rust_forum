@@ -4,6 +4,8 @@ use crate::database::user_contact;
 
 use super::user::User;
 
+const CONTACT_DEFAULT_ID_FOR_EMAIL: i64 = 0;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserContact {
     pub user_id: i64,
@@ -20,8 +22,19 @@ impl UserContact {
         user_contact::create(&user.user_id, contact_id, contact_value).await
     }
 
+    pub async fn create_for_email(
+        user: &User,
+        contact_value: &String,
+    ) -> Result<UserContact, sqlx::Error> {
+        user_contact::create(&user.user_id, &CONTACT_DEFAULT_ID_FOR_EMAIL, contact_value).await
+    }
+
     pub async fn read(user: &User, contact_id: &i64) -> Result<UserContact, sqlx::Error> {
         user_contact::read(&user.user_id, contact_id).await
+    }
+
+    pub async fn read_for_email(user: &User) -> Result<UserContact, sqlx::Error> {
+        user_contact::read(&user.user_id, &CONTACT_DEFAULT_ID_FOR_EMAIL).await
     }
 
     pub async fn read_for_value(
@@ -29,6 +42,10 @@ impl UserContact {
         contact_value: &String,
     ) -> Result<UserContact, sqlx::Error> {
         user_contact::read_for_value(contact_id, contact_value).await
+    }
+
+    pub async fn read_for_email_value(contact_value: &String) -> Result<UserContact, sqlx::Error> {
+        user_contact::read_for_value(&CONTACT_DEFAULT_ID_FOR_EMAIL, contact_value).await
     }
 
     pub async fn update(

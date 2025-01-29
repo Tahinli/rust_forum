@@ -9,7 +9,11 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::feature::{comment::Comment, user::User};
+use crate::{
+    error::ForumInputError,
+    feature::{comment::Comment, user::User},
+    SERVER_CONFIG,
+};
 
 use super::middleware::by_authorization_token_then_insert;
 
@@ -52,18 +56,25 @@ async fn create(
     Extension(user): Extension<Arc<User>>,
     Json(create_comment): Json<CreateComment>,
 ) -> impl IntoResponse {
-    match Comment::create(
-        &user.user_id,
-        &create_comment.post_id,
-        &create_comment.comment,
-    )
-    .await
-    {
-        Ok(comment) => (StatusCode::CREATED, Json(serde_json::json!(comment))),
-        Err(err_val) => (
+    if create_comment.comment.len() > SERVER_CONFIG.comment_length_limit {
+        return (
             StatusCode::BAD_REQUEST,
-            Json(serde_json::json!(err_val.to_string())),
-        ),
+            Json(serde_json::json!(ForumInputError::TooLong)),
+        );
+    } else {
+        match Comment::create(
+            &user.user_id,
+            &create_comment.post_id,
+            &create_comment.comment,
+        )
+        .await
+        {
+            Ok(comment) => (StatusCode::CREATED, Json(serde_json::json!(comment))),
+            Err(err_val) => (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!(err_val.to_string())),
+            ),
+        }
     }
 }
 
@@ -82,12 +93,19 @@ async fn update(
     Path(comment_id): Path<i64>,
     Json(update_comment): Json<UpdateComment>,
 ) -> impl IntoResponse {
-    match Comment::update(&comment_id, &user.user_id, &update_comment.comment).await {
-        Ok(comment) => (StatusCode::ACCEPTED, Json(serde_json::json!(comment))),
-        Err(err_val) => (
+    if update_comment.comment.len() > SERVER_CONFIG.comment_length_limit {
+        return (
             StatusCode::BAD_REQUEST,
-            Json(serde_json::json!(err_val.to_string())),
-        ),
+            Json(serde_json::json!(ForumInputError::TooLong)),
+        );
+    } else {
+        match Comment::update(&comment_id, &user.user_id, &update_comment.comment).await {
+            Ok(comment) => (StatusCode::ACCEPTED, Json(serde_json::json!(comment))),
+            Err(err_val) => (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!(err_val.to_string())),
+            ),
+        }
     }
 }
 

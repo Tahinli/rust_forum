@@ -14,8 +14,6 @@ use super::middleware::{
     by_authorization_token_then_insert, user_and_token_then_insert, UserAndAuthorizationToken,
 };
 
-const CONTACT_EMAIL_DEFAULT_ID: i64 = 0;
-
 #[derive(Debug, Serialize, Deserialize)]
 struct CreateOneTimePassword {
     pub user_email: String,
@@ -49,17 +47,17 @@ pub fn route() -> Router {
                 by_authorization_token_then_insert,
             )),
         )
-        .route("/count/users", get(count_all_for_user))
+        .route(
+            "/count/users",
+            get(count_all_for_user).route_layer(axum::middleware::from_fn(
+                by_authorization_token_then_insert,
+            )),
+        )
 }
 async fn create_one_time_password(
     Json(create_one_time_password): Json<CreateOneTimePassword>,
 ) -> impl IntoResponse {
-    match UserContact::read_for_value(
-        &CONTACT_EMAIL_DEFAULT_ID,
-        &create_one_time_password.user_email,
-    )
-    .await
-    {
+    match UserContact::read_for_email_value(&create_one_time_password.user_email).await {
         Ok(user_contact) => match User::read(&user_contact.user_id).await {
             Ok(user) => {
                 match OneTimePassword::new(&user, &create_one_time_password.user_email).await {
@@ -83,7 +81,7 @@ async fn create_one_time_password(
     }
 }
 async fn create(Json(create_login): Json<CreateLogin>) -> impl IntoResponse {
-    match UserContact::read_for_value(&CONTACT_EMAIL_DEFAULT_ID, &create_login.user_email).await {
+    match UserContact::read_for_email_value(&create_login.user_email).await {
         Ok(user_contact) => match User::read(&user_contact.user_id).await {
             Ok(user) => {
                 let one_time_password =

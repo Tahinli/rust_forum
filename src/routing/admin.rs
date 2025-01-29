@@ -7,12 +7,20 @@ pub mod role;
 pub mod user;
 pub mod user_contact;
 
-use axum::Router;
+use axum::{response::IntoResponse, routing::get, Router};
 
-use super::middleware::builder_or_admin_by_authorization_token;
+use super::middleware::{builder_or_admin_by_authorization_token, by_uri_then_insert};
+
+async fn a() -> impl IntoResponse {
+    "HEY"
+}
 
 pub fn route() -> Router {
     Router::new()
+        .route(
+            "/users/{user_id}",
+            get(a).route_layer(axum::middleware::from_fn(by_uri_then_insert)),
+        )
         .nest("/logins", login::route())
         .nest("/users", user::route())
         .nest("/roles", role::route())

@@ -8,7 +8,6 @@ pub mod utils;
 
 use std::sync::LazyLock;
 
-use sqlx::{Pool, Postgres};
 use utils::naive_toml_parser;
 
 pub static SERVER_CONFIG: LazyLock<ServerConfig> = LazyLock::new(ServerConfig::default);
@@ -51,6 +50,8 @@ pub struct ServerConfig {
     pub login_token_expiration_time_limit: usize,
     pub login_token_refresh_time_limit: usize,
     pub concurrency_limit: usize,
+    pub post_length_limit: usize,
+    pub comment_length_limit: usize,
 }
 
 impl Default for ServerConfig {
@@ -72,14 +73,11 @@ impl Default for ServerConfig {
                 ),
                 login_token_refresh_time_limit: value_or_max(server_configs.pop_front().unwrap()),
                 concurrency_limit: value_or_semaphore_max(server_configs.pop_front().unwrap()),
+                post_length_limit: server_configs.pop_front().unwrap().parse().unwrap(),
+                comment_length_limit: server_configs.pop_front().unwrap().parse().unwrap(),
             }
         } else {
             panic!("Server Config File Must Include [server_config] at the First Line")
         }
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct AppState {
-    pub database_connection: Pool<Postgres>,
 }
