@@ -5,7 +5,7 @@ use tokio::sync::RwLock;
 
 use crate::{
     error::ForumMailError,
-    //mail::{MailFieldsOneTimePassword, MailTemplate},
+    mail::{MailFieldsOneTimePassword, MailTemplate},
 };
 
 use super::user::User;
@@ -38,11 +38,9 @@ impl OneTimePassword {
             one_time_password,
         };
 
-        //todo vice versa comments :D
-        // let mail_template =
-        //     MailTemplate::OneTimePassword(MailFieldsOneTimePassword::new(&user.name, &new_self));
-        println!("{}", user_email);
-        //mail_template.send_mail(user_email).await?;
+        let mail_template =
+            MailTemplate::OneTimePassword(MailFieldsOneTimePassword::new(&user.name, &new_self));
+        mail_template.send_mail(user_email).await?;
 
         let mut one_time_passwords = ONE_TIME_PASSWORDS.write().await;
         one_time_passwords.push(new_self);
